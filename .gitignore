@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+npm-debug.log*
+# Downloaded assets are fetched by `npm run assets`; only the manifest, lock and credits are committed.
+public/assets/*
+!public/assets/custom/
+public/assets/custom/*
+!public/assets/custom/README.md
+!public/assets/custom/manifest.example.json
+.tmp-assets/
+bin/

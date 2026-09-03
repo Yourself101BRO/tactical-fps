@@ -1,0 +1,32 @@
+{
+  "name": "tactical-fps",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Browser multiplayer tactical FPS with Call of Duty style movement, for desktop and mobile",
+  "engines": { "node": ">=22.12" },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "vite build",
+    "start": "node server/index.ts",
+    "check": "tsc -p tsconfig.client.json --noEmit && tsc -p tsconfig.server.json --noEmit",
+    "test": "node --test tests/*.test.ts",
+    "soak": "node scripts/bot-soak.ts",
+    "assets": "node scripts/fetch-assets.mjs",
+    "icons": "node scripts/make-icons.mjs",
+    "tunnel": "node scripts/tunnel.mjs",
+    "share": "node scripts/share.mjs"
+  },
+  "dependencies": {
+    "peerjs": "1.5.5",
+    "three": "0.185.1",
+    "ws": "8.21.3"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "@types/three": "0.185.0",
+    "@types/ws": "8.18.1",
+    "typescript": "5.9.3",
+    "vite": "8.2.2"
+  }
+}
