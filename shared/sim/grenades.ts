@@ -100,13 +100,30 @@ export function stepProjectile(world: WorldView, p: ProjectileState, dt: number)
  * (frag/flash resolution) and anything else (bots, client prediction) that
  * wants to reason about flash exposure without waiting for the fuse.
  */
+/**
+ * A grenade explodes from a point lifted slightly above where it rests. A
+ * resting grenade sits on (or fractionally inside) a floor surface, and a
+ * line-of-sight ray starting exactly on that surface is occluded by the floor
+ * itself — which would make every ground-level detonation harmless.
+ */
+const EXPLOSION_ORIGIN_LIFT = 0.25;
+const _origin: Vec3 = { x: 0, y: 0, z: 0 };
+
+function explosionOrigin(p: ProjectileState): Vec3 {
+  _origin.x = p.pos.x;
+  _origin.y = p.pos.y + EXPLOSION_ORIGIN_LIFT;
+  _origin.z = p.pos.z;
+  return _origin;
+}
+
 export function flashStrength(world: WorldView, p: ProjectileState, viewer: PlayerState): number {
   if (!viewer.alive) return 0;
   world.eyePos(viewer, _eye);
-  const dx = p.pos.x - _eye.x, dy = p.pos.y - _eye.y, dz = p.pos.z - _eye.z;
+  const origin = explosionOrigin(p);
+  const dx = origin.x - _eye.x, dy = origin.y - _eye.y, dz = origin.z - _eye.z;
   const dist = Math.hypot(dx, dy, dz);
   if (dist > FLASH_RADIUS) return 0;
-  if (!world.hasLineOfSight(p.pos, _eye)) return 0;
+  if (!world.hasLineOfSight(origin, _eye)) return 0;
 
   yawPitchToDir(viewer.yaw, viewer.pitch, _forward);
   let viewDot = 0;
@@ -118,12 +135,13 @@ export function flashStrength(world: WorldView, p: ProjectileState, viewer: Play
 /** Resolves a frag or flash detonation: damage/blind every player in range with LOS, emits events. */
 export function explode(world: WorldView, p: ProjectileState): void {
   if (p.kind === PROJ_FRAG) {
+    const origin = explosionOrigin(p);
     for (const target of world.players.values()) {
       if (!target.alive) continue;
       world.eyePos(target, _eye);
-      const dist = Math.hypot(_eye.x - p.pos.x, _eye.y - p.pos.y, _eye.z - p.pos.z);
+      const dist = Math.hypot(_eye.x - origin.x, _eye.y - origin.y, _eye.z - origin.z);
       if (dist > FRAG_RADIUS) continue;
-      if (!world.hasLineOfSight(p.pos, _eye)) continue;
+      if (!world.hasLineOfSight(origin, _eye)) continue;
       const t = clamp((dist - FRAG_RADIUS_FULL) / Math.max(1e-6, FRAG_RADIUS - FRAG_RADIUS_FULL), 0, 1);
       const base = lerp(FRAG_DAMAGE_MAX, FRAG_DAMAGE_MIN, t);
       const dmg = base * explosiveDamageMult(target);

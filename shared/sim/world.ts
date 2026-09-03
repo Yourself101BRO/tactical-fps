@@ -46,7 +46,7 @@ import { buildColliders, buildNavGrid } from '../map/colliders.ts';
 import { eyeHeight, stepPlayer } from '../movement.ts';
 import { activeWeaponDef, giveLoadout, isReloading, stepWeapon } from './weaponstate.ts';
 import type { WeaponDef } from '../weapons.ts';
-import { damageAt, pelletDirs, recoilAt, spreadFor } from '../weapons.ts';
+import { damageAt, pelletDirs, spreadFor } from '../weapons.ts';
 import { regenDelayFor } from '../perks.ts';
 import { clamp, mulberry32, wrapAngle, yawPitchToDir } from '../math.ts';
 import { HitHistory } from './lagcomp.ts';
@@ -307,12 +307,13 @@ export class World implements WorldView {
   private fireOnce(shooter: PlayerState, def: WeaponDef, weaponId: number, rewindTick: number): void {
     const eye = this.eyePos(shooter, this.eyeScratch);
 
-    // Actual fired direction includes both the recoil pattern kick and cone
-    // spread, per the assignment ("dir = actual shot dir incl. spread/recoil").
-    const recoil = recoilAt(def, shooter.shotIndex, this.rng);
-    const aimYaw = wrapAngle(shooter.yaw + recoil.yaw);
-    const aimPitch = clamp(shooter.pitch + recoil.pitch, -HALF_PI, HALF_PI);
-    yawPitchToDir(aimYaw, aimPitch, this.baseDirScratch);
+    // The bullet leaves exactly along the player's aim plus cone spread. Recoil
+    // is NOT added here: as in COD, recoil is a view kick the client applies to
+    // its own yaw/pitch after each shot (see client/main.ts), which the player
+    // then counteracts. The server sees the kicked aim in the next InputCmd, so
+    // uncompensated recoil still lands off-target while the first shot goes
+    // where the crosshair was.
+    yawPitchToDir(shooter.yaw, shooter.pitch, this.baseDirScratch);
 
     const isPellet = def.pellets > 1;
     const coneRad = isPellet

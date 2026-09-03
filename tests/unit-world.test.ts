@@ -13,6 +13,7 @@ import type { ModeRules, SpawnChoice, WorldView } from '../shared/sim/types.ts';
 import { createInputCmd, defaultLoadout, vec3 } from '../shared/types.ts';
 import type { MapLayout } from '../shared/map/types.ts';
 import {
+  BTN_ADS,
   BTN_FIRE,
   EV_KILL,
   FRAG_DAMAGE_MAX,
@@ -213,7 +214,8 @@ test('World.step: a fired shot resolves against the target rewound position, kil
   const cmd = createInputCmd();
   cmd.seq = 1;
   cmd.tick = tickWhenAtOldPos + INTERP_TICKS;
-  cmd.yaw = 0; cmd.pitch = 0; cmd.buttons = BTN_FIRE;
+  cmd.yaw = 0; cmd.pitch = 0; cmd.buttons = BTN_FIRE | BTN_ADS;
+  shooter.ads = true; shooter.adsT = 1; // aiming down sights: tight cone, deterministic hit
   world.applyInput(shooter.id, cmd);
   world.step(TICK_DT);
 
@@ -250,7 +252,8 @@ test('World.step resolves a fired shot into damage, a kill event and rules.onKil
   cmd.tick = world.tick + INTERP_TICKS;
   cmd.yaw = 0;
   cmd.pitch = 0;
-  cmd.buttons = BTN_FIRE;
+  cmd.buttons = BTN_FIRE | BTN_ADS;
+  shooter.ads = true; shooter.adsT = 1; // aiming down sights: tight cone, deterministic hit
   world.applyInput(shooter.id, cmd);
   world.step(TICK_DT);
 

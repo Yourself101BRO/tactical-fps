@@ -4,5 +4,6 @@
     "lib": ["ES2022"],
     "types": ["node"]
   },
-  "include": ["server/**/*.ts", "shared/**/*.ts", "scripts/**/*.ts", "tests/**/*.ts"]
+  "include": ["server/**/*.ts", "shared/**/*.ts", "scripts/**/*.ts", "tests/**/*.ts"],
+  "exclude": ["tests/unit-audio.test.ts"]
 }

@@ -241,7 +241,8 @@ export const MELEE_DAMAGE = 999;
 export const RESPAWN_DELAY = 3.0;
 export const SWAP_TIME = 0.6;
 export const AMPED_SWAP_MULT = 1 / 1.7;
-export const HEAD_RADIUS = 0.12;
+/** Generous like COD's: a 0.15 m head sphere closes the neck seam between head and chest volumes. */
+export const HEAD_RADIUS = 0.15;
 
 // ---------------------------------------------------------------------------
 // Grenades
