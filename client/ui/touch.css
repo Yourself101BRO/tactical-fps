@@ -2,12 +2,24 @@
  * Touch control layer styling. The DOM elements themselves (joystick, look
  * zone, buttons) are created by the input module (client/input/touch.ts);
  * this file only shapes/positions/colors them by the class names documented
- * in the plan (§7 touch layout). Buttons stay empty <div>s by default — the
- * ::before icon glyphs below render via the :empty selector and step aside
- * automatically if the input module ever puts its own icon markup inside.
+ * in the plan (§7 touch layout).
  *
- * --touch-opacity and --touch-scale are expected on a `.tc-layer` ancestor
- * (or on :root), driven from Settings.touchOpacity / Settings.touchScale.
+ * client/input/touch.ts also injects its own minimal inline <style> (a
+ * fallback "so the control scheme works before touch.css loads") *after*
+ * this stylesheet is already in the document — on an equal-specificity tie
+ * its rules would normally win by source order. The `!important` below is
+ * deliberate and scoped to pure appearance/position properties (background,
+ * border, size, radius, right/left/top/bottom) to guarantee this design wins
+ * regardless of load order. Nothing here touches `display`, `left`/`top` on
+ * the joystick, or `transform` on the stick — those are driven every frame
+ * by touch.ts via inline element styles, which this file must never fight.
+ *
+ * Known integration gaps (touch.ts owns the JS, not this file): the ADS
+ * button's *toggled* state and the joystick's ">0.9 pushed" sprint state
+ * are tracked only in touch.ts's internal fields, not reflected onto any
+ * class/attribute — so `.tc-active` below only flashes for the duration of
+ * the physical press, not the logical toggle-on state. Fixing that needs a
+ * one-line class/attribute toggle added in touch.ts.
  */
 
 .tc-layer {
@@ -24,14 +36,14 @@
 /* ---------------------------------------------------------------------- */
 .tc-joystick {
   position: absolute;
-  width: 128px;
-  height: 128px;
-  margin-left: -64px;
-  margin-top: -64px;
-  border-radius: 50%;
-  background: rgba(232, 230, 227, var(--touch-opacity, 0.7));
-  opacity: 0.35;
-  border: 2px solid rgba(232, 230, 227, calc(var(--touch-opacity, 0.7) * 0.6));
+  width: 132px !important;
+  height: 132px !important;
+  margin-left: -66px !important;
+  margin-top: -66px !important;
+  border-radius: 50% !important;
+  background: radial-gradient(circle, rgba(232, 230, 227, 0.06) 0%, rgba(232, 230, 227, 0.03) 70%, transparent 100%) !important;
+  border: 2px solid rgba(232, 230, 227, calc(var(--touch-opacity, 0.7) * 0.55)) !important;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4) inset !important;
   pointer-events: none;
   touch-action: none;
   transform: scale(var(--touch-scale, 1));
@@ -39,16 +51,26 @@
 
 .tc-stick {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 56px;
-  height: 56px;
-  margin-left: -28px;
-  margin-top: -28px;
-  border-radius: 50%;
-  background: rgba(242, 177, 52, var(--touch-opacity, 0.7));
+  left: 50% !important;
+  top: 50% !important;
+  width: 58px !important;
+  height: 58px !important;
+  margin-left: -29px !important;
+  margin-top: -29px !important;
+  border-radius: 50% !important;
+  background: radial-gradient(circle at 35% 30%, var(--accent-2, #ffcf5c), var(--accent, #f2b134) 70%) !important;
+  border: 1px solid rgba(0, 0, 0, 0.35) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5) !important;
   pointer-events: none;
   touch-action: none;
+  transition: box-shadow 0.1s;
+}
+/* Sprint threshold glow. touch.ts does not currently expose the ">0.9
+   pushed" state as a class (see file header) — this rule is ready for a
+   `.tc-stick.tc-sprint-armed` class the day that one-line hook lands, and
+   is otherwise inert. */
+.tc-stick.tc-sprint-armed {
+  box-shadow: 0 0 12px 3px rgba(242, 177, 52, 0.85) !important;
 }
 
 /* Right-half drag-look zone: invisible hit target, no visual chrome. */
@@ -64,22 +86,34 @@
 }
 
 /* ---------------------------------------------------------------------- */
-/* Buttons: round, translucent, >=56px, icon glyph via ::before            */
+/* Buttons: round, translucent, >=56px, icon glyph (::before) + tiny label */
+/* (the raw text node touch.ts already renders, e.g. "FIRE"/"ADS"/"JMP")   */
 /* ---------------------------------------------------------------------- */
 .tc-btn {
   position: absolute;
-  width: 56px;
-  height: 56px;
+  width: 58px !important;
+  height: 58px !important;
   min-width: 56px;
   min-height: 56px;
-  border-radius: 50%;
-  background: rgba(26, 30, 35, var(--touch-opacity, 0.7));
-  border: 2px solid rgba(232, 230, 227, calc(var(--touch-opacity, 0.7) * 0.5));
-  color: rgba(232, 230, 227, 0.95);
-  display: flex;
+  border-radius: 50% !important;
+  background: rgba(16, 19, 24, var(--touch-opacity, 0.7)) !important;
+  border: 1.5px solid rgba(232, 230, 227, calc(var(--touch-opacity, 0.7) * 0.55)) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45) !important;
+  color: rgba(232, 230, 227, 0.95) !important;
+  display: flex !important;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  gap: 1px;
+  /* This (small) font-size is what touch.ts's own raw text node ("FIRE",
+     "ADS", "JMP", ...) renders at — a flex child stacked below the ::before
+     icon, giving exactly "icon glyph + tiny label" without touching
+     touch.ts. The icon itself sets its own larger font-size below. */
+  font-family: var(--font-head, "Barlow Condensed", "Arial Narrow", Impact, sans-serif);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
   line-height: 1;
   pointer-events: auto;
   touch-action: none;
@@ -87,134 +121,220 @@
   -webkit-user-select: none;
   transform: scale(var(--touch-scale, 1));
   transform-origin: center;
+  transition: background-color 0.1s, border-color 0.1s, box-shadow 0.1s;
 }
-.tc-btn:empty::before {
-  content: attr(data-icon);
+.tc-btn::before {
+  content: '';
+  display: block;
+  font-size: 20px;
+  line-height: 1;
+  color: rgba(232, 230, 227, 0.98);
 }
 .tc-btn.tc-active {
-  background: rgba(242, 177, 52, var(--touch-opacity, 0.7));
-  border-color: var(--accent, #f2b134);
+  background: rgba(242, 177, 52, var(--touch-opacity, 0.7)) !important;
+  border-color: var(--accent, #f2b134) !important;
+  color: #1a1408 !important;
+  box-shadow: 0 0 10px 2px rgba(242, 177, 52, 0.55) !important;
 }
 
-/* Primary fire: large, bottom-right, thumb-natural. */
+/* Primary fire: large, bottom-right, thumb-natural, amber-outlined. */
 .tc-btn-fire {
-  width: 76px;
-  height: 76px;
-  right: calc(24px + env(safe-area-inset-right));
-  bottom: calc(24px + env(safe-area-inset-bottom));
-  background: rgba(214, 69, 65, var(--touch-opacity, 0.7));
+  width: 78px !important;
+  height: 78px !important;
+  right: calc(22px + env(safe-area-inset-right)) !important;
+  bottom: calc(22px + env(safe-area-inset-bottom)) !important;
+  background: rgba(120, 20, 18, var(--touch-opacity, 0.7)) !important;
+  border: 2px solid rgba(242, 177, 52, 0.75) !important;
 }
-.tc-btn-fire:empty::before {
-  content: '●';
+.tc-btn-fire::before {
+  content: '';
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.tc-btn-fire.tc-active {
+  background: rgba(214, 69, 65, var(--touch-opacity, 0.7)) !important;
+  border-color: var(--accent-2, #ffcf5c) !important;
 }
 
 /* Secondary tap-fire sits near ADS (not beside the joystick, where it would
    collide with joystick spawn detection) — matches COD Mobile's placement. */
 .tc-btn-fire2 {
-  right: calc(110px + env(safe-area-inset-right));
-  bottom: calc(120px + env(safe-area-inset-bottom));
+  width: 50px !important;
+  height: 50px !important;
+  right: calc(104px + env(safe-area-inset-right)) !important;
+  bottom: calc(128px + env(safe-area-inset-bottom)) !important;
 }
-.tc-btn-fire2:empty::before {
-  content: '●';
-  font-size: 14px;
+.tc-btn-fire2::before {
+  content: '';
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: currentColor;
 }
 
 .tc-btn-ads {
-  right: calc(20px + env(safe-area-inset-right));
-  bottom: calc(120px + env(safe-area-inset-bottom));
+  right: calc(18px + env(safe-area-inset-right)) !important;
+  bottom: calc(128px + env(safe-area-inset-bottom)) !important;
 }
-.tc-btn-ads:empty::before {
-  content: '◎';
+.tc-btn-ads::before {
+  content: '';
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  box-sizing: border-box;
+  background: radial-gradient(circle, currentColor 0 2px, transparent 2.5px);
+}
+/* ADS toggled-on read-out: see the "Known integration gaps" note above —
+   ready for a `.tc-toggled-on` class touch.ts does not yet apply. */
+.tc-btn-ads.tc-toggled-on {
+  background: rgba(242, 177, 52, var(--touch-opacity, 0.7)) !important;
+  border-color: var(--accent, #f2b134) !important;
 }
 
 .tc-btn-jump {
-  right: calc(96px + env(safe-area-inset-right));
-  bottom: calc(24px + env(safe-area-inset-bottom));
+  right: calc(94px + env(safe-area-inset-right)) !important;
+  bottom: calc(24px + env(safe-area-inset-bottom)) !important;
 }
-.tc-btn-jump:empty::before {
-  content: '⤒';
+.tc-btn-jump::before {
+  content: '';
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 12px solid currentColor;
 }
 
 .tc-btn-crouch {
-  right: calc(170px + env(safe-area-inset-right));
-  bottom: calc(24px + env(safe-area-inset-bottom));
+  right: calc(168px + env(safe-area-inset-right)) !important;
+  bottom: calc(24px + env(safe-area-inset-bottom)) !important;
 }
-.tc-btn-crouch:empty::before {
-  content: '⤓';
+.tc-btn-crouch::before {
+  content: '';
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 12px solid currentColor;
 }
 
 .tc-btn-reload {
-  right: calc(24px + env(safe-area-inset-right));
-  bottom: calc(196px + env(safe-area-inset-bottom));
+  right: calc(22px + env(safe-area-inset-right)) !important;
+  bottom: calc(198px + env(safe-area-inset-bottom)) !important;
 }
-.tc-btn-reload:empty::before {
+.tc-btn-reload::before {
   content: '⟲';
+  font-size: 22px !important;
 }
 
 .tc-btn-swap {
-  right: calc(96px + env(safe-area-inset-right));
-  bottom: calc(196px + env(safe-area-inset-bottom));
-  width: 48px;
-  height: 48px;
-  font-size: 18px;
+  right: calc(96px + env(safe-area-inset-right)) !important;
+  bottom: calc(198px + env(safe-area-inset-bottom)) !important;
+  width: 48px !important;
+  height: 48px !important;
 }
-.tc-btn-swap:empty::before {
+.tc-btn-swap::before {
   content: '⇄';
+  font-size: 18px !important;
 }
 
 .tc-btn-lethal {
-  left: calc(170px + env(safe-area-inset-left));
-  bottom: calc(24px + env(safe-area-inset-bottom));
-  width: 48px;
-  height: 48px;
-  font-size: 18px;
+  left: calc(168px + env(safe-area-inset-left)) !important;
+  bottom: calc(22px + env(safe-area-inset-bottom)) !important;
+  width: 48px !important;
+  height: 48px !important;
 }
-.tc-btn-lethal:empty::before {
-  content: '💣';
+.tc-btn-lethal::before {
+  content: '';
+  width: 13px;
+  height: 15px;
+  border-radius: 50% 50% 45% 45%;
+  background: currentColor;
 }
 
 .tc-btn-tactical {
-  left: calc(96px + env(safe-area-inset-left));
-  bottom: calc(24px + env(safe-area-inset-bottom));
-  width: 48px;
-  height: 48px;
-  font-size: 18px;
+  left: calc(96px + env(safe-area-inset-left)) !important;
+  bottom: calc(22px + env(safe-area-inset-bottom)) !important;
+  width: 48px !important;
+  height: 48px !important;
 }
-.tc-btn-tactical:empty::before {
-  content: '⚡';
+.tc-btn-tactical::before {
+  content: '';
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 3px solid transparent;
+  border-bottom: 14px solid currentColor;
+  transform: rotate(18deg);
 }
 
 .tc-btn-melee {
-  left: calc(24px + env(safe-area-inset-left));
-  bottom: calc(96px + env(safe-area-inset-bottom));
-  width: 48px;
-  height: 48px;
-  font-size: 18px;
+  left: calc(24px + env(safe-area-inset-left)) !important;
+  bottom: calc(96px + env(safe-area-inset-bottom)) !important;
+  width: 48px !important;
+  height: 48px !important;
 }
-.tc-btn-melee:empty::before {
-  content: '🔪';
+.tc-btn-melee::before {
+  content: '';
+  width: 22px;
+  height: 3px;
+  background: currentColor;
+  transform: rotate(-45deg);
 }
 
 .tc-btn-score {
-  top: calc(12px + env(safe-area-inset-top));
-  right: calc(12px + env(safe-area-inset-right));
-  width: 44px;
-  height: 44px;
-  font-size: 14px;
+  top: calc(10px + env(safe-area-inset-top)) !important;
+  right: calc(10px + env(safe-area-inset-right)) !important;
+  width: 44px !important;
+  height: 44px !important;
 }
-.tc-btn-score:empty::before {
+.tc-btn-score::before {
   content: '☰';
+  font-size: 16px !important;
 }
 
 .tc-btn-menu {
-  top: calc(12px + env(safe-area-inset-top));
-  left: calc(12px + env(safe-area-inset-left));
-  width: 44px;
-  height: 44px;
-  font-size: 14px;
+  top: calc(10px + env(safe-area-inset-top)) !important;
+  left: calc(10px + env(safe-area-inset-left)) !important;
+  width: 44px !important;
+  height: 44px !important;
 }
-.tc-btn-menu:empty::before {
+.tc-btn-menu::before {
   content: '≡';
+  font-size: 18px !important;
+}
+
+/* On coarse-pointer (touch) layouts, pull the ammo/health HUD blocks inward
+   so they never sit under the button cluster. The real trigger is the
+   `(pointer: coarse)` media query below, which needs no JS cooperation;
+   `body.touch-layout` is a no-op today (nothing in this codebase sets that
+   class) kept only so a future JS-driven layout switch has a selector to
+   hook without touching this stylesheet. */
+body.touch-layout .hud-health {
+  left: calc(20px + env(safe-area-inset-left));
+  bottom: calc(112px + env(safe-area-inset-bottom));
+}
+body.touch-layout .hud-ammo {
+  right: calc(20px + env(safe-area-inset-right));
+  bottom: calc(112px + env(safe-area-inset-bottom));
+}
+body.touch-layout .hud-minimap-frame {
+  top: calc(58px + env(safe-area-inset-top));
+}
+@media (pointer: coarse) {
+  .hud-health {
+    left: calc(20px + env(safe-area-inset-left));
+    bottom: calc(112px + env(safe-area-inset-bottom));
+  }
+  .hud-ammo {
+    right: calc(20px + env(safe-area-inset-right));
+    bottom: calc(112px + env(safe-area-inset-bottom));
+  }
+  .hud-minimap-frame {
+    top: calc(58px + env(safe-area-inset-top));
+  }
 }
 
 /* Landscape-only: the rotate prompt (styles.css) covers portrait; this file

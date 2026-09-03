@@ -1,0 +1,1165 @@
+/*
+ * Match HUD, overlays (spectate/scoreboard/scope) styling. Loaded after
+ * styles.css (see client/main.ts) — same class names as the previous
+ * baseline HUD rules in styles.css are redefined here at equal specificity
+ * so cascade order alone makes this file win; styles.css itself is never
+ * touched. Every color/font reads through var(--token, fallback) so this
+ * works whether or not styles.css has finished defining the shared design
+ * tokens (--bg, --panel, --line, --accent, --team-a/b, --font-head, ...).
+ *
+ * MW2019-style language: near-black translucent panels, slanted corners cut
+ * via clip-path, a thin amber top edge, uppercase condensed headings, and
+ * glyphs (not just color) for team identity throughout.
+ */
+
+/* ---------------------------------------------------------------------- */
+/* Root grid                                                               */
+/* ---------------------------------------------------------------------- */
+.hud {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  pointer-events: none;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  font-family: var(--font-body, "Barlow", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif);
+  color: var(--text, #e8e6e3);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Crosshair                                                               */
+/* ---------------------------------------------------------------------- */
+.crosshair {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+}
+.ch-line {
+  position: absolute;
+  background: var(--text, #e8e6e3);
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.8);
+  transition: transform 0.06s linear;
+}
+.ch-top,
+.ch-bottom {
+  width: 2px;
+  height: 9px;
+  left: -1px;
+  border-radius: 1px;
+}
+.ch-top {
+  top: -13px;
+}
+.ch-bottom {
+  bottom: -13px;
+}
+.ch-left,
+.ch-right {
+  height: 2px;
+  width: 9px;
+  top: -1px;
+  border-radius: 1px;
+}
+.ch-left {
+  left: -13px;
+}
+.ch-right {
+  right: -13px;
+}
+.ch-dot {
+  position: absolute;
+  left: -1px;
+  top: -1px;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: var(--text, #e8e6e3);
+  opacity: 0.85;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Hitmarker: white X, red for headshots, scale+fade over 200ms            */
+/* ---------------------------------------------------------------------- */
+.hitmarker {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 24px;
+  height: 24px;
+  margin: -12px 0 0 -12px;
+  color: var(--text, #e8e6e3);
+  opacity: 0;
+  pointer-events: none;
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.9));
+}
+.hitmarker svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.hitmarker.active {
+  animation: hitmarker-pop 0.2s ease-out;
+}
+.hitmarker.headshot {
+  color: var(--danger, #d64541);
+}
+@keyframes hitmarker-pop {
+  0% {
+    opacity: 1;
+    transform: scale(1.5);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.92);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Damage-direction arcs: chevrons pointing toward the crosshair from the  */
+/* bearing damage arrived from.                                            */
+/* ---------------------------------------------------------------------- */
+.damage-arcs {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+}
+.damage-arc {
+  /* Box is centered exactly on the crosshair origin (left/top = -half the
+     size) so the default center transform-origin makes JS's
+     `rotate(angle) translateY(-92px)` place it on a clean radial ring —
+     do not decenter this without also revisiting hud.ts's damageFrom(). */
+  position: absolute;
+  left: -18px;
+  top: -8px;
+  width: 36px;
+  height: 16px;
+  opacity: 1;
+  background: linear-gradient(to bottom, rgba(214, 69, 65, 0.05), rgba(214, 69, 65, 0.9));
+  clip-path: polygon(50% 100%, 100% 0%, 0% 0%);
+  filter: drop-shadow(0 0 3px rgba(214, 69, 65, 0.6));
+}
+
+/* ---------------------------------------------------------------------- */
+/* Scope overlay: black vignette, circular window, fine reticle            */
+/* ---------------------------------------------------------------------- */
+.scope-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.scope-mask {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(78vmin, 78vw);
+  height: min(78vmin, 78vw);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  box-shadow: 0 0 0 9999px #000;
+  background: radial-gradient(circle at center, transparent 0%, transparent 92%, rgba(0, 0, 0, 0.55) 100%);
+}
+.scope-reticle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 15vmin;
+  height: 15vmin;
+  min-width: 96px;
+  min-height: 96px;
+  transform: translate(-50%, -50%);
+  color: rgba(232, 230, 227, 0.9);
+}
+.scope-reticle-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.flash-overlay {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+}
+.damage-vignette {
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 26vmin 6vmin rgba(214, 69, 65, 0.55);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease-out;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Health (bottom-left): segmented bar, numeric value, low-health pulse    */
+/* ---------------------------------------------------------------------- */
+.hud-health {
+  position: absolute;
+  left: calc(20px + env(safe-area-inset-left));
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 216px;
+}
+.health-icon {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--danger, #d64541);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8));
+}
+.health-icon svg {
+  width: 100%;
+  height: 100%;
+}
+.health-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.health-bar {
+  position: relative;
+  height: 12px;
+  background: var(--bg-2, #13161b);
+  border: 1px solid var(--line, #2a2f36);
+  clip-path: polygon(6px 0, 100% 0, 100% 100%, 0 100%, 0 6px);
+  overflow: hidden;
+}
+.health-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--ok, #6fd66f);
+  transition: width 0.15s ease-out, background-color 0.2s;
+}
+.health-fill.low {
+  background: var(--accent, #f2b134);
+}
+.health-fill.critical {
+  background: var(--danger, #d64541);
+  animation: health-pulse 0.9s ease-in-out infinite;
+}
+@keyframes health-pulse {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.5);
+  }
+}
+.health-fill.regen {
+  filter: brightness(1.7);
+}
+/* Segment dividers: a repeating overlay drawn on top of the bar. */
+.health-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0,
+    transparent calc(20% - 2px),
+    var(--bg-2, #13161b) calc(20% - 2px),
+    var(--bg-2, #13161b) 20%
+  );
+  pointer-events: none;
+}
+.health-text {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace);
+  font-size: 12px;
+  color: var(--muted, #9aa0a6);
+  letter-spacing: 0.03em;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Ammo (bottom-right): large condensed digits, reserve, reload, equipment */
+/* ---------------------------------------------------------------------- */
+.hud-ammo {
+  position: absolute;
+  right: calc(20px + env(safe-area-inset-right));
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.weapon-name {
+  display: block;
+  font-family: var(--font-head, "Barlow Condensed", "Arial Narrow", Impact, sans-serif);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted, #9aa0a6);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.ammo-row {
+  font-family: var(--font-head, "Barlow Condensed", "Arial Narrow", Impact, sans-serif);
+  font-weight: 700;
+  font-size: 46px;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.ammo-count {
+  color: var(--text, #e8e6e3);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+  transition: color 0.15s;
+}
+.ammo-count.empty {
+  color: var(--danger, #d64541);
+  animation: ammo-empty-pulse 0.6s ease-in-out infinite;
+}
+@keyframes ammo-empty-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+.ammo-reserve {
+  font-size: 20px;
+  color: var(--muted, #9aa0a6);
+}
+.reload-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+.reload-label {
+  font-family: var(--font-head, "Barlow Condensed", "Arial Narrow", Impact, sans-serif);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--accent, #f2b134);
+}
+.reload-bar {
+  width: 72px;
+  height: 4px;
+  background: var(--bg-2, #13161b);
+  border: 1px solid var(--line, #2a2f36);
+  overflow: hidden;
+}
+.reload-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--accent, #f2b134);
+  transition: width 0.05s linear;
+}
+.hud-equip {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+.eq-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted, #9aa0a6);
+}
+.eq-icon {
+  width: 15px;
+  height: 15px;
+  display: inline-flex;
+}
+.eq-icon svg {
+  width: 100%;
+  height: 100%;
+}
+.eq-lethal .eq-icon {
+  color: var(--danger, #d64541);
+}
+.eq-tactical .eq-icon {
+  color: var(--accent, #f2b134);
+}
+.eq-count {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace);
+  font-size: 13px;
+  color: var(--text, #e8e6e3);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Top-center: timer, mode-specific score, bomb timer                      */
+/* ---------------------------------------------------------------------- */
+.hud-top-center {
+  position: absolute;
+  top: calc(14px + env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.hud-timer {
+  font-family: var(--font-head, "Barlow Condensed", "Arial Narrow", Impact, sans-serif);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: 0.04em;
+  color: var(--text, #e8e6e3);
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.7);
+}
+.hud-score {
+  font-family: var(--font-head, "Barlow Condensed", "Arial Narrow", Impact, sans-serif);
+}
+.score-tdm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.score-team {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.score-glyph {
+  font-size: 11px;
+}
+.score-team-a {
+  color: var(--team-a, #2f7bd6);
+}
+.score-team-b {
+  color: var(--team-b, #d6532f);
+}
+.score-sep {
+  color: var(--muted, #9aa0a6);
+}
+.score-num {
+  font-size: 17px;
+}
+.score-ffa {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 13px;
+}
+.score-ffa-label {
+  color: var(--muted, #9aa0a6);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+.score-ffa-name {
+  color: var(--accent, #f2b134);
+  font-weight: 600;
+  max-width: 16ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.score-ffa-kills {
+  color: var(--text, #e8e6e3);
+}
+.score-snd {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.score-round-label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--muted, #9aa0a6);
+}
+.snd-pips {
+  display: flex;
+  gap: 3px;
+}
+.snd-pip {
+  width: 8px;
+  height: 8px;
+  background: var(--bg-2, #13161b);
+  border: 1px solid var(--line-2, #3a4048);
+  clip-path: polygon(2px 0, 100% 0, 100% 100%, 0 100%, 0 2px);
+}
+.snd-pips-a .snd-pip.filled {
+  background: var(--team-a, #2f7bd6);
+  border-color: var(--team-a, #2f7bd6);
+}
+.snd-pips-b .snd-pip.filled {
+  background: var(--team-b, #d6532f);
+  border-color: var(--team-b, #d6532f);
+}
+
+.hud-bomb-timer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--danger, #d64541);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  animation: bomb-pulse 1s ease-in-out infinite;
+}
+.bomb-timer-icon {
+  width: 14px;
+  height: 14px;
+}
+.bomb-timer-icon svg {
+  width: 100%;
+  height: 100%;
+}
+@keyframes bomb-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.hud-banner {
+  position: absolute;
+  top: calc(60px + env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%) translateY(-6px);
+  font-family: var(--font-head, "Barlow Condensed", "Arial Narrow", Impact, sans-serif);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text, #e8e6e3);
+  background: var(--panel, rgba(16, 19, 24, 0.86));
+  border: 1px solid var(--line, #2a2f36);
+  padding: 6px 20px;
+  clip-path: polygon(10px 0, 100% 0, 100% 100%, calc(100% - 10px) 100%, 0 100%, 0 100%);
+  opacity: 0;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: opacity 0.2s, transform 0.2s;
+  white-space: nowrap;
+}
+.hud-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10px;
+  right: 0;
+  height: 2px;
+  background: var(--accent, #f2b134);
+}
+.hud-banner.active {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Top-right: ping, lag badge, killfeed                                    */
+/* ---------------------------------------------------------------------- */
+.hud-top-right {
+  position: absolute;
+  top: calc(14px + env(safe-area-inset-top));
+  right: calc(14px + env(safe-area-inset-right));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  max-width: min(46vw, 360px);
+}
+.hud-ping-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.hud-ping {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+.hud-ping.ping-good {
+  color: var(--ok, #6fd66f);
+}
+.hud-ping.ping-warn {
+  color: var(--accent, #f2b134);
+}
+.hud-ping.ping-bad {
+  color: var(--danger, #d64541);
+}
+.hud-lag-badge {
+  font-family: var(--font-head, "Barlow Condensed", "Arial Narrow", Impact, sans-serif);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #1a1408;
+  background: var(--danger, #d64541);
+  padding: 1px 6px;
+  animation: lag-blink 0.8s steps(2, jump-none) infinite;
+}
+@keyframes lag-blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.killfeed {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+.kf-row {
+  position: relative;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 13px;
+  background: var(--panel, rgba(16, 19, 24, 0.86));
+  border: 1px solid var(--line, #2a2f36);
+  padding: 4px 10px;
+  clip-path: polygon(8px 0, 100% 0, 100% 100%, 0 100%, 0 8px);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: kf-slide-in 0.22s ease-out;
+  transition: opacity 0.25s linear;
+}
+@keyframes kf-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.kf-row.kf-local {
+  border-color: var(--accent, #f2b134);
+  box-shadow: 0 0 0 1px var(--accent, #f2b134) inset;
+}
+.kf-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 500;
+  max-width: 14ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kf-team-glyph {
+  font-size: 9px;
+}
+.kf-team-1 {
+  color: var(--team-a, #2f7bd6);
+}
+.kf-team-2 {
+  color: var(--team-b, #d6532f);
+}
+.kf-weapon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--muted, #9aa0a6);
+  flex: none;
+}
+.kf-badge {
+  font-family: var(--font-head, "Barlow Condensed", "Arial Narrow", Impact, sans-serif);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--muted, #9aa0a6);
+  border: 1px solid var(--line-2, #3a4048);
+  padding: 1px 4px;
+}
+.kf-icon {
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  color: var(--muted, #9aa0a6);
+}
+.kf-icon svg {
+  width: 100%;
+  height: 100%;
+}
+.kf-icon-bomb {
+  color: var(--danger, #d64541);
+}
+.kf-headshot-badge {
+  width: 13px;
+  height: 13px;
+  display: inline-flex;
+  color: var(--danger, #d64541);
+  flex: none;
+}
+.kf-headshot-badge svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Bottom-center: interact prompt, cook indicator, sprint icon             */
+/* ---------------------------------------------------------------------- */
+.hud-prompt {
+  position: absolute;
+  bottom: 30%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.prompt-ring {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.prompt-ring-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.prompt-ring-bg {
+  fill: var(--panel, rgba(16, 19, 24, 0.86));
+  stroke: var(--line-2, #3a4048);
+  stroke-width: 2;
+}
+.prompt-ring-fg {
+  fill: none;
+  stroke: var(--accent, #f2b134);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.08s linear;
+}
+.hud-prompt:not(.has-ring) .prompt-ring-fg {
+  display: none;
+}
+.hud-prompt:not(.has-ring) .prompt-ring-bg {
+  stroke: var(--line, #2a2f36);
+}
+.prompt-key {
+  /* Positioned (not just a plain flex child) so it paints above the
+     absolutely-positioned ring SVG instead of being covered by it. */
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-head, "Barlow Condensed", "Arial Narrow", Impact, sans-serif);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text, #e8e6e3);
+}
+.prompt-label {
+  font-family: var(--font-head, "Barlow Condensed", "Arial Narrow", Impact, sans-serif);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text, #e8e6e3);
+  background: var(--panel, rgba(16, 19, 24, 0.86));
+  border: 1px solid var(--line, #2a2f36);
+  padding: 3px 12px;
+  clip-path: polygon(6px 0, 100% 0, 100% 100%, calc(100% - 6px) 100%, 0 100%, 0 100%);
+}
+
+.hud-cook {
+  position: absolute;
+  bottom: 24%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace);
+  font-size: 13px;
+  color: var(--accent, #f2b134);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.hud-sprint-icon {
+  position: absolute;
+  bottom: calc(56px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 20px;
+  color: var(--muted, #9aa0a6);
+  opacity: 0.85;
+  animation: sprint-bob 0.5s ease-in-out infinite alternate;
+}
+.hud-sprint-icon svg {
+  width: 100%;
+  height: 100%;
+}
+.hud-sprint-icon.tac {
+  color: var(--accent, #f2b134);
+}
+@keyframes sprint-bob {
+  from {
+    transform: translateX(-50%) translateX(0);
+  }
+  to {
+    transform: translateX(-50%) translateX(3px);
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Top-left: minimap frame + compass strip                                 */
+/* ---------------------------------------------------------------------- */
+.hud-minimap-frame {
+  position: absolute;
+  top: calc(14px + env(safe-area-inset-top));
+  left: calc(14px + env(safe-area-inset-left));
+  width: 132px;
+  padding: 6px;
+  background: var(--panel, rgba(16, 19, 24, 0.86));
+  border: 1px solid var(--line, #2a2f36);
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.hud-minimap-frame::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 12px;
+  right: 0;
+  height: 2px;
+  background: var(--accent, #f2b134);
+}
+.hud-minimap-mask {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid var(--line-2, #3a4048);
+  box-shadow: 0 0 0 3px var(--bg-2, #13161b);
+  margin: 0 auto;
+}
+.minimap-canvas {
+  display: block;
+}
+.hud-compass {
+  position: relative;
+  margin-top: 6px;
+  height: 16px;
+  overflow: hidden;
+  background: var(--bg-2, #13161b);
+  border: 1px solid var(--line, #2a2f36);
+}
+.hud-compass-strip {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(90deg, var(--line-2, #3a4048) 0 1px, transparent 1px 45px);
+  background-position-x: 0;
+}
+.hud-compass::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 1px;
+  height: 100%;
+  background: var(--accent, #f2b134);
+}
+.hud-compass-label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-head, "Barlow Condensed", "Arial Narrow", Impact, sans-serif);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--accent, #f2b134);
+  background: var(--bg-2, #13161b);
+  padding: 0 4px;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Spectate                                                                 */
+/* ---------------------------------------------------------------------- */
+.spectate-overlay {
+  position: absolute;
+  top: calc(14px + env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.spectate-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--panel, rgba(16, 19, 24, 0.86));
+  border: 1px solid var(--line, #2a2f36);
+  padding: 8px 18px;
+  clip-path: polygon(10px 0, 100% 0, 100% 100%, calc(100% - 10px) 100%, 0 100%, 0 100%);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.spectate-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10px;
+  right: 0;
+  height: 2px;
+  background: var(--accent, #f2b134);
+}
+.spectate-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-head, "Barlow Condensed", "Arial Narrow", Impact, sans-serif);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--accent, #f2b134);
+}
+.spectate-label svg {
+  width: 14px;
+  height: 14px;
+}
+.spectate-name {
+  font-family: var(--font-head, "Barlow Condensed", "Arial Narrow", Impact, sans-serif);
+  font-size: 15px;
+  font-weight: 600;
+}
+.spectate-health-bar {
+  width: 110px;
+  height: 8px;
+  background: var(--bg-2, #13161b);
+  border: 1px solid var(--line, #2a2f36);
+  clip-path: polygon(4px 0, 100% 0, 100% 100%, 0 100%, 0 4px);
+  overflow: hidden;
+}
+.spectate-health-fill {
+  height: 100%;
+  background: var(--ok, #6fd66f);
+  transition: width 0.15s ease-out;
+}
+.spectate-health-fill.low {
+  background: var(--danger, #d64541);
+}
+.spectate-health-text {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace);
+  font-size: 12px;
+  color: var(--muted, #9aa0a6);
+}
+.spectate-hint {
+  font-size: 11px;
+  color: var(--muted, #9aa0a6);
+  letter-spacing: 0.02em;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Scoreboard (Tab)                                                         */
+/* ---------------------------------------------------------------------- */
+.scoreboard-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(11, 13, 16, 0.75);
+  pointer-events: auto;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.scoreboard-panel {
+  background: var(--panel, rgba(16, 19, 24, 0.86));
+  border: 1px solid var(--line, #2a2f36);
+  padding: 22px 26px;
+  width: min(920px, 94vw);
+  max-height: 82vh;
+  overflow-y: auto;
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  position: relative;
+}
+.scoreboard-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 14px;
+  right: 0;
+  height: 2px;
+  background: var(--accent, #f2b134);
+}
+.sb-title {
+  font-family: var(--font-head, "Barlow Condensed", "Arial Narrow", Impact, sans-serif);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent, #f2b134);
+  text-align: center;
+  margin-bottom: 14px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.sb-team-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-head, "Barlow Condensed", "Arial Narrow", Impact, sans-serif);
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin: 14px 0 6px;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--line, #2a2f36);
+  padding-bottom: 4px;
+}
+.sb-team-header:first-child {
+  margin-top: 0;
+}
+.sb-team-a {
+  color: var(--team-a, #2f7bd6);
+}
+.sb-team-b {
+  color: var(--team-b, #d6532f);
+}
+.sb-team-rounds {
+  margin-left: auto;
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace);
+  color: var(--text, #e8e6e3);
+}
+.sb-row {
+  display: grid;
+  grid-template-columns: 28px 1fr 48px 48px 72px 64px;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace);
+  font-size: 13px;
+}
+.sb-row.sb-header {
+  color: var(--muted, #9aa0a6);
+  font-family: var(--font-body, "Barlow", sans-serif);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.sb-row:not(.sb-header):nth-child(odd) {
+  background: rgba(255, 255, 255, 0.02);
+}
+.sb-row.me {
+  background: rgba(242, 177, 52, 0.12);
+  outline: 1px solid var(--accent, #f2b134);
+}
+.sb-rank {
+  color: var(--muted, #9aa0a6);
+  text-align: center;
+}
+.sb-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.sb-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-body, "Barlow", sans-serif);
+  font-size: 14px;
+}
+.sb-team-glyph {
+  flex: none;
+  font-size: 10px;
+}
+.sb-team-glyph.sb-team-a {
+  color: var(--team-a, #2f7bd6);
+}
+.sb-team-glyph.sb-team-b {
+  color: var(--team-b, #d6532f);
+}
+.sb-bot-tag {
+  flex: none;
+  font-family: var(--font-head, "Barlow Condensed", "Arial Narrow", Impact, sans-serif);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--muted, #9aa0a6);
+  border: 1px solid var(--line-2, #3a4048);
+  padding: 1px 4px;
+}
+.sb-kills,
+.sb-deaths,
+.sb-score,
+.sb-ping {
+  text-align: right;
+}
+.sb-score {
+  color: var(--accent, #f2b134);
+  font-weight: 600;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Narrow viewports (small phones, split-screen, foldables): the top row  */
+/* has four independent blocks (minimap, timer/score, killfeed, plus the  */
+/* banner beneath) — shrink and tighten them so none can collide.         */
+/* Real portrait phones never reach this HUD at all (the rotate prompt    */
+/* covers it), so this is a safety margin for everything else narrow.     */
+/* ---------------------------------------------------------------------- */
+@media (max-width: 700px) {
+  .hud-minimap-frame {
+    width: 104px;
+    padding: 4px;
+  }
+  .hud-minimap-mask {
+    width: 92px;
+    height: 92px;
+  }
+  .hud-compass {
+    height: 13px;
+  }
+  .hud-timer {
+    font-size: 18px;
+  }
+  .score-tdm,
+  .score-ffa {
+    font-size: 12px;
+    gap: 6px;
+  }
+  .score-num {
+    font-size: 14px;
+  }
+  .score-snd {
+    gap: 6px;
+  }
+  .snd-pip {
+    width: 6px;
+    height: 6px;
+  }
+  .hud-top-right {
+    max-width: 40vw;
+  }
+  .kf-name {
+    max-width: 9ch;
+  }
+}
+
+
+/* Touch layouts: the right-hand button cluster (fire / ADS / jump / crouch /
+   reload / swap) occupies roughly the right 230 px and the bottom 260 px of a
+   phone screen, so the ammo readout moves left of it and the health bar sits
+   just above the floating-joystick thumb zone. */
+@media (pointer: coarse) {
+  .hud-ammo {
+    right: calc(240px + env(safe-area-inset-right, 0px));
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+  .hud-health {
+    left: calc(16px + env(safe-area-inset-left, 0px));
+    bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+    width: 180px;
+  }
+}

@@ -312,13 +312,24 @@ let session: Session | null = null;
 /** Room created by startHost for the P2P path, picked up by openSession. */
 let hostedRoom: Room | null = null;
 
+let connecting = false;
+
 async function connectWith(label: string, connect: () => Promise<ClientNet>, localHost: LocalHost | null, peerHost: PeerHost | null): Promise<void> {
+  // One connection at a time: a double submit (Enter + click, auto-advance +
+  // GO) must not open a second session and leave a ghost player behind.
+  if (connecting || session) {
+    localHost?.stop();
+    peerHost?.stop();
+    return;
+  }
+  connecting = true;
   app.go('connecting');
   ui.showMessage('Connecting', label, () => {});
   let net: ClientNet;
   try {
     net = await connect();
   } catch (err) {
+    connecting = false;
     ui.hideMessage();
     hostedRoom = null;
     localHost?.stop();
@@ -327,6 +338,7 @@ async function connectWith(label: string, connect: () => Promise<ClientNet>, loc
     app.reset('menu');
     return;
   }
+  connecting = false;
   ui.hideMessage();
   openSession(net, localHost, peerHost);
 }
@@ -1110,7 +1122,19 @@ declare global {
       step: typeof debugStep;
       run: typeof debugRun;
       shot: typeof debugShot;
+      /** Test hook: pretend the dedicated server is (un)reachable so Host/Join take the P2P path. */
+      setReachable: (v: boolean) => void;
     };
   }
 }
-window.tfps = { session: () => session, visuals: () => visuals, app, settings, audio, step: debugStep, run: debugRun, shot: debugShot };
+window.tfps = {
+  session: () => session,
+  visuals: () => visuals,
+  app,
+  settings,
+  audio,
+  step: debugStep,
+  run: debugRun,
+  shot: debugShot,
+  setReachable: (v: boolean) => { reachable = v; if (app.screen === 'menu') showMenu(); },
+};
