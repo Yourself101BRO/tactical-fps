@@ -11,3 +11,4 @@ public/assets/custom/*
 !public/assets/custom/manifest.example.json
 .tmp-assets/
 bin/
+.backup-w1/

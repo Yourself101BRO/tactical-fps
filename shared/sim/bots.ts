@@ -163,6 +163,8 @@ export class BotBrain implements BotBrainLike {
   private stuckSamplePos: Vec3 = vec3();
   private stuckSampleTick = 0;
   private stuckSampleValid = false;
+  /** Set for one tick when stuck is detected; consumed as an unconditional jump pulse. */
+  private forceJumpPending = false;
 
   // S&D role caching (recomputed once per round via a phase/bomb-state fingerprint).
   private sndChosenSite = -1;
@@ -574,6 +576,11 @@ export class BotBrain implements BotBrainLike {
       this.pickNewRoamTarget(world, self);
     }
 
+    if (this.forceJumpPending) {
+      cmd.buttons |= BTN_JUMP;
+      this.forceJumpPending = false;
+    }
+
     if (this.pathIndex < this.pathBuf.length) {
       const wx = this.pathBuf[this.pathIndex]!;
       const wz = this.pathBuf[this.pathIndex + 1]!;
@@ -664,6 +671,7 @@ export class BotBrain implements BotBrainLike {
       this.havePath = false;
       this.pathBuf.length = 0;
       this.jumpedForWaypoint = false;
+      this.forceJumpPending = true;
     }
     this.stuckSamplePos.x = self.pos.x;
     this.stuckSamplePos.y = self.pos.y;

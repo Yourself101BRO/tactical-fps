@@ -5,8 +5,8 @@
 // back into PlayerState.
 
 import * as THREE from 'three';
-import type { PlayerState, Vec3 } from '../../shared/types.ts';
-import { damp, vec3, yawPitchToDir } from '../../shared/math.ts';
+import { vec3, type PlayerState, type Vec3 } from '../../shared/types.ts';
+import { damp, yawPitchToDir } from '../../shared/math.ts';
 import { eyeHeight } from '../../shared/movement.ts';
 import { WEAPONS } from '../../shared/weapons.ts';
 import {
@@ -118,7 +118,7 @@ export class CameraRig {
 
     // Mount lean: slide along the mounted edge instead of moving freely.
     if (local.mounted) {
-      const leanRatio = MOUNT_LEAN !== 0 ? local.mountLean / MOUNT_LEAN : 0;
+      const leanRatio = local.mountLean / MOUNT_LEAN;
       // Edge direction is the mount normal rotated 90° about Y.
       const edgeX = -local.mountNZ;
       const edgeZ = local.mountNX;

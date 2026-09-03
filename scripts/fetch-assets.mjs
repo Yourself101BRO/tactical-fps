@@ -624,7 +624,15 @@ function buildCreditsMarkdown(manifest, indexAssets) {
   return lines.join('\n');
 }
 
-main().catch((err) => {
-  console.error('[assets] fatal:', err);
-  process.exit(1);
-});
+// Only run when executed directly (`node scripts/fetch-assets.mjs`), not when
+// imported — tests/unit-fetch-assets.test.ts imports the pure helpers below
+// without triggering a real asset fetch.
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((err) => {
+    console.error('[assets] fatal:', err);
+    process.exit(1);
+  });
+}
+
+// Pure, dependency-free helpers exported for tests/unit-fetch-assets.test.ts.
+export { globToRegExp, matchesAnyGlob, pickPrimary, normalizeMapName, textureMapFromFiles };

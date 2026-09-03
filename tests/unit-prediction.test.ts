@@ -97,12 +97,17 @@ interface Delivery<T> {
 /** A LocalTransport-like lossy/jittery/latent one-way link, but for arbitrary payloads instead of bytes, so the test doesn't need shared/net/room.ts to exist to exercise realistic delivery conditions. */
 class LossyLink<T> {
   private readonly queue: Delivery<T>[] = [];
-  constructor(
-    private readonly latencyMs: number,
-    private readonly jitterMs: number,
-    private readonly lossPct: number,
-    private readonly rng: () => number,
-  ) {}
+  private readonly latencyMs: number;
+  private readonly jitterMs: number;
+  private readonly lossPct: number;
+  private readonly rng: () => number;
+
+  constructor(latencyMs: number, jitterMs: number, lossPct: number, rng: () => number) {
+    this.latencyMs = latencyMs;
+    this.jitterMs = jitterMs;
+    this.lossPct = lossPct;
+    this.rng = rng;
+  }
 
   send(nowMs: number, payload: T): void {
     if (this.rng() < this.lossPct) return;

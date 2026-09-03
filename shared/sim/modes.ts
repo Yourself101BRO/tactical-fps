@@ -222,7 +222,7 @@ export class FfaRules implements ModeRules {
     world.events.push({ type: EV_ROUND, state: ROUND_START, winner: 0, round: 0 });
   }
 
-  onKill(world: WorldView, killer: PlayerState | null, victim: PlayerState): void {
+  onKill(world: WorldView, killer: PlayerState | null, victim: PlayerState, _weapon: number, _headshot: boolean): void {
     victim.deaths++;
     if (killer && killer.id !== victim.id) killer.kills++;
     victim.respawnTick = world.tick + Math.round(RESPAWN_DELAY / TICK_DT);
@@ -232,7 +232,7 @@ export class FfaRules implements ModeRules {
     if (this.phase === PHASE_LIVE) world.respawn(player.id, this.pickSpawn(world, player.team));
   }
 
-  onPlayerLeave(): void {}
+  onPlayerLeave(_world: WorldView, _player: PlayerState): void {}
 
   canRespawn(world: WorldView, player: PlayerState): boolean {
     return !player.alive && world.tick >= player.respawnTick;
@@ -243,7 +243,7 @@ export class FfaRules implements ModeRules {
     return pickSpawnFrom(world, world.colliders.spawnsFor(team), (p) => p.alive);
   }
 
-  interact(_world: WorldView, player: PlayerState): void {
+  interact(_world: WorldView, player: PlayerState, _dt: number): void {
     player.interactT = 0;
   }
 
@@ -313,7 +313,7 @@ export class TdmRules implements ModeRules {
     world.events.push({ type: EV_ROUND, state: ROUND_START, winner: 0, round: 0 });
   }
 
-  onKill(world: WorldView, killer: PlayerState | null, victim: PlayerState): void {
+  onKill(world: WorldView, killer: PlayerState | null, victim: PlayerState, _weapon: number, _headshot: boolean): void {
     victim.deaths++;
     if (killer && killer.id !== victim.id) {
       killer.kills++;
@@ -329,7 +329,7 @@ export class TdmRules implements ModeRules {
     if (this.phase === PHASE_LIVE) world.respawn(player.id, this.pickSpawn(world, player.team));
   }
 
-  onPlayerLeave(): void {}
+  onPlayerLeave(_world: WorldView, _player: PlayerState): void {}
 
   canRespawn(world: WorldView, player: PlayerState): boolean {
     return !player.alive && world.tick >= player.respawnTick;
@@ -339,7 +339,7 @@ export class TdmRules implements ModeRules {
     return pickSpawnFrom(world, world.colliders.spawnsFor(team), (p) => p.team !== team);
   }
 
-  interact(_world: WorldView, player: PlayerState): void {
+  interact(_world: WorldView, player: PlayerState, _dt: number): void {
     player.interactT = 0;
   }
 
@@ -490,7 +490,7 @@ export class SndRules implements ModeRules {
     this.timeLeft = MATCH_END_SECONDS;
   }
 
-  onKill(_world: WorldView, killer: PlayerState | null, victim: PlayerState): void {
+  onKill(_world: WorldView, killer: PlayerState | null, victim: PlayerState, _weapon: number, _headshot: boolean): void {
     victim.deaths++;
     if (killer && killer.id !== victim.id) killer.kills++;
     if (this.bomb.state === BOMB_CARRIED && this.bomb.carrier === victim.id) {
@@ -506,9 +506,9 @@ export class SndRules implements ModeRules {
     player.connState = CONN_WAITING_ROUND;
   }
 
-  onPlayerLeave(): void {}
+  onPlayerLeave(_world: WorldView, _player: PlayerState): void {}
 
-  canRespawn(): boolean {
+  canRespawn(_world: WorldView, _player: PlayerState): boolean {
     // One life per round; the next life comes from beginRound(), not a timer.
     return false;
   }

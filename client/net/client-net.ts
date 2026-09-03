@@ -158,28 +158,22 @@ function peerLink(game: DataConnection, control: DataConnection): Transport {
   return link;
 }
 
-/** Races a HELLO/WELCOME handshake over an already-open Transport-shaped link. Resolves on WELCOME, rejects on an ERROR frame or the timeout. Restores link.onMessage to a no-op before settling either way. */
-function awaitWelcome(link: Transport, timeoutMs: number, sendHello: () => void): Promise<WelcomeMsg> {
+/**
+ * Waits for a WELCOME frame on an already-open Transport-shaped link,
+ * sending HELLO first. Resolves on WELCOME, rejects on an ERROR frame. Has
+ * no timeout of its own — callers each own a single timer bounding their
+ * *whole* connect operation (open + handshake), not a second, independently
+ * restarted one layered on top of it.
+ */
+function raceWelcome(link: Transport, sendHello: () => void): Promise<WelcomeMsg> {
   return new Promise((resolve, reject) => {
-    let settled = false;
-    const timer = setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      link.onMessage = () => {};
-      reject(new Error('Timed out waiting for WELCOME'));
-    }, timeoutMs);
     link.onMessage = (data) => {
-      if (settled) return;
       const msg = decodeMessage(data);
       if (!msg) return;
       if (msg.kind === 'welcome') {
-        settled = true;
-        clearTimeout(timer);
         link.onMessage = () => {};
         resolve(msg.welcome);
       } else if (msg.kind === 'error') {
-        settled = true;
-        clearTimeout(timer);
         link.onMessage = () => {};
         reject(new Error(`Server rejected connection (code ${msg.code}): ${msg.message}`));
       }
@@ -238,50 +232,57 @@ export class ClientNet {
     this.startPing();
   }
 
-  /** Opens a WebSocket to `url`, sends HELLO, resolves on WELCOME. Rejects on MSG_ERROR or a timeout. */
+  /**
+   * Opens a WebSocket to `url`, sends HELLO, resolves on WELCOME. Rejects on
+   * MSG_ERROR or a single RECONNECT_TIMEOUT_MS timeout covering the whole
+   * operation (socket open included, not just the post-open handshake).
+   */
   static connectWs(url: string, hello: HelloMsg): Promise<ClientNet> {
     return new Promise((resolve, reject) => {
       let settled = false;
       const ws = new WebSocket(url);
       ws.binaryType = 'arraybuffer';
-      const timer = setTimeout(() => {
-        if (settled) return;
-        settled = true;
-        try {
-          ws.close();
-        } catch {
-          /* ignore */
-        }
-        reject(new Error('WebSocket connection timed out'));
-      }, RECONNECT_TIMEOUT_MS);
-      ws.addEventListener('error', () => {
+
+      const finish = (fn: () => void): void => {
         if (settled) return;
         settled = true;
         clearTimeout(timer);
-        reject(new Error('WebSocket connection failed'));
-      });
-      ws.addEventListener('open', () => {
-        const link = wsLink(ws);
-        awaitWelcome(link, RECONNECT_TIMEOUT_MS, () => link.send(encodeHello(hello)))
-          .then((welcome) => {
-            if (settled) return;
-            settled = true;
-            clearTimeout(timer);
-            const net = new ClientNet('ws', link, welcome, hello);
-            net.wsUrl = url;
-            resolve(net);
-          })
-          .catch((err: unknown) => {
-            if (settled) return;
-            settled = true;
-            clearTimeout(timer);
+        fn();
+      };
+      const timer = setTimeout(
+        () =>
+          finish(() => {
             try {
               ws.close();
             } catch {
               /* ignore */
             }
-            reject(err instanceof Error ? err : new Error(String(err)));
-          });
+            reject(new Error('WebSocket connection timed out'));
+          }),
+        RECONNECT_TIMEOUT_MS,
+      );
+
+      ws.addEventListener('error', () => finish(() => reject(new Error('WebSocket connection failed'))));
+      ws.addEventListener('open', () => {
+        const link = wsLink(ws);
+        raceWelcome(link, () => link.send(encodeHello(hello)))
+          .then((welcome) =>
+            finish(() => {
+              const net = new ClientNet('ws', link, welcome, hello);
+              net.wsUrl = url;
+              resolve(net);
+            }),
+          )
+          .catch((err: unknown) =>
+            finish(() => {
+              try {
+                ws.close();
+              } catch {
+                /* ignore */
+              }
+              reject(err instanceof Error ? err : new Error(String(err)));
+            }),
+          );
       });
     });
   }
@@ -320,7 +321,7 @@ export class ClientNet {
         const tryReady = () => {
           if (settled || !gameOpen || !controlOpen) return;
           const link = peerLink(game, control);
-          awaitWelcome(link, P2P_CONNECT_TIMEOUT_MS, () => link.send(encodeHello(hello)))
+          raceWelcome(link, () => link.send(encodeHello(hello)))
             .then((welcome) => {
               if (settled) return;
               settled = true;
@@ -355,8 +356,9 @@ export class ClientNet {
   static connectLocal(room: Room, hello: HelloMsg): Promise<ClientNet> {
     const [hostSide, clientSide] = LocalTransport.pair();
     room.attach(hostSide);
-    return awaitWelcome(clientSide, RECONNECT_TIMEOUT_MS, () => clientSide.send(encodeHello(hello))).then(
-      (welcome) => new ClientNet('local', clientSide, welcome, hello),
+    const welcome = raceWelcome(clientSide, () => clientSide.send(encodeHello(hello)));
+    return withTimeout(welcome, RECONNECT_TIMEOUT_MS, 'Timed out waiting for the local room to accept HELLO').then(
+      (w) => new ClientNet('local', clientSide, w, hello),
     );
   }
 
@@ -512,4 +514,21 @@ export class ClientNet {
 
 function nowMs(): number {
   return typeof performance !== 'undefined' ? performance.now() : Date.now();
+}
+
+/** Rejects with `message` if `promise` hasn't settled within `ms`. */
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(message)), ms);
+    promise.then(
+      (v) => {
+        clearTimeout(timer);
+        resolve(v);
+      },
+      (err: unknown) => {
+        clearTimeout(timer);
+        reject(err);
+      },
+    );
+  });
 }

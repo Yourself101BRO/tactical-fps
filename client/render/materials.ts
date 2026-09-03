@@ -14,7 +14,6 @@ import {
   MAT_WOOD,
   TEAM_A,
   TEAM_B,
-  TEAM_NONE,
 } from '../../shared/constants.ts';
 import type { GameAssets } from '../assets/loader.ts';
 
@@ -49,6 +48,7 @@ const FALLBACK_COLOR_FOR_MATERIAL: Partial<Record<number, number>> = {
 
 const FALLBACK_COLOR_DEFAULT = 0x808080;
 
+/** TEAM_NONE (and anything else unrecognized) shares this neutral color. */
 function teamColor(team: number): number {
   if (team === TEAM_A) return 0x2f7bd6;
   if (team === TEAM_B) return 0xd6532f;
@@ -63,14 +63,12 @@ function hashNoise(x: number, y: number): number {
 
 export class MaterialLibrary {
   private readonly assets: GameAssets;
-  private readonly quality: Quality;
   private readonly anisotropy: number;
   private readonly cache = new Map<string, THREE.MeshStandardMaterial>();
   private readonly named = new Map<string, THREE.MeshStandardMaterial>();
 
   constructor(assets: GameAssets, quality: Quality) {
     this.assets = assets;
-    this.quality = quality;
     // The renderer's max anisotropy isn't available here (MaterialLibrary is
     // built without a renderer reference); 8 is safely supported by every
     // desktop GPU this game targets, 1 keeps mobile bandwidth down.

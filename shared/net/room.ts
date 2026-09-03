@@ -281,18 +281,17 @@ export class Room {
     const id = this.allocateId();
     if (id === 0) return false;
     const team = this.rules.assignTeam(this.world);
-    const player = this.world.addPlayer(id, botName(id), team, true, defaultLoadout());
-    this.rules.onPlayerJoin(this.world, player);
+    // World.addPlayer calls rules.onPlayerJoin internally.
+    this.world.addPlayer(id, botName(id), team, true, defaultLoadout());
     // Deterministic per-bot seed derived from the room seed; no Math.random.
     this.bots.set(id, new BotBrain(id, this.botDifficulty, (this.seed + id * 7919) >>> 0));
     return true;
   }
 
   private removeBot(id: number): void {
-    const player = this.world.players.get(id);
     this.bots.delete(id);
+    // World.removePlayer calls rules.onPlayerLeave internally.
     this.world.removePlayer(id);
-    if (player) this.rules.onPlayerLeave(this.world, player);
   }
 
   /** Drop the lowest-id bot to free a slot for a joining human. */
@@ -492,15 +491,10 @@ export class Room {
   }
 
   private broadcastSnapshots(): void {
-    for (const [id, conn] of this.conns) {
-      const player = this.world.players.get(id);
-      const snap = this.world.snapshotFor(id);
-      snap.phase = this.rules.phase;
-      snap.timeLeft = this.rules.timeLeft;
-      snap.scores = this.rules.scores;
-      snap.bombState = this.rules.bomb.state;
-      snap.bombTimer = this.rules.bomb.timer;
-      snap.lastAckSeq = player ? player.lastAppliedSeq : 0;
+    // World.snapshotFor already fills phase/timeLeft/scores/bomb/lastAckSeq
+    // from world.rules (set to this.rules below and on every mode change).
+    for (const conn of this.conns.values()) {
+      const snap = this.world.snapshotFor(conn.playerId);
       conn.transport.send(encodeSnapshot(snap));
     }
   }
