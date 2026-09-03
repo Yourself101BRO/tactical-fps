@@ -4,6 +4,7 @@
 // computed by shared/ code; this file only wires and presents.
 
 import './ui/styles.css';
+import './ui/hud.css';
 import './ui/touch.css';
 
 import * as THREE from 'three';
@@ -199,9 +200,13 @@ async function boot(): Promise<void> {
   const colliders = buildColliders(layout);
   visuals = { renderer, materials, lighting, cameraRig, viewmodel, characters, effects, layout, colliders };
 
-  window.addEventListener('resize', () => renderer.resize());
-  window.addEventListener('orientationchange', () => setTimeout(() => renderer.resize(), 100));
-  renderer.resize();
+  const onViewportChange = (): void => {
+    renderer.resize();
+    updateRotatePrompt();
+  };
+  window.addEventListener('resize', onViewportChange);
+  window.addEventListener('orientationchange', () => setTimeout(onViewportChange, 100));
+  onViewportChange();
 
   // Audio unlocks on the first gesture; banks are built right after.
   const unlock = async (): Promise<void> => {
@@ -843,6 +848,16 @@ function updateObjectivePrompt(s: Session, local: PlayerState): void {
 let lastFrame = 0;
 let portrait = false;
 
+/** Phones must play in landscape; evaluated on viewport events and every frame. */
+function updateRotatePrompt(): void {
+  if (!isTouch) return;
+  const isPortrait = window.innerHeight > window.innerWidth;
+  if (isPortrait !== portrait) {
+    portrait = isPortrait;
+    ui.showRotatePrompt(isPortrait);
+  }
+}
+
 function frame(now: number): void {
   requestAnimationFrame(frame);
   stepFrame(now);
@@ -857,10 +872,11 @@ function stepFrame(now: number): void {
   const s = session;
   const v = visuals;
 
-  if (isTouch) {
-    const isPortrait = window.innerHeight > window.innerWidth;
-    if (isPortrait !== portrait) { portrait = isPortrait; ui.showRotatePrompt(isPortrait); }
-  }
+  updateRotatePrompt();
+  // Viewport emulation and some in-app browsers change the canvas box without a
+  // resize event; keep the drawing buffer in step with the CSS box.
+  const expectedWidth = canvas.clientWidth * Math.min(devicePixelRatio || 1, 2) * (s ? s.resolutionScale : 1);
+  if (canvas.clientWidth > 0 && Math.abs(expectedWidth - canvas.width) > 4) v.renderer.resize();
 
   if (!s || !s.inMatch) {
     // Idle background: slow orbit over the map behind the menus.
