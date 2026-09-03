@@ -296,7 +296,11 @@ export class World implements WorldView {
   private resolveShots(shooter: PlayerState, cmd: InputCmd, shots: number): void {
     const def = activeWeaponDef(shooter);
     const weaponId = shooter.slots[shooter.activeSlot]!.weapon;
-    const rewindTick = clamp(cmd.tick - INTERP_TICKS, this.tick - LAGCOMP_HISTORY_TICKS, this.tick);
+    // Floor at tick 1: that is the earliest tick HitHistory can ever have recorded
+    // (step() increments `tick` before recording), so a shot fired in the first
+    // few ticks of a match — before INTERP_TICKS of history exists — rewinds to
+    // the oldest available frame instead of a guaranteed-empty negative tick.
+    const rewindTick = clamp(cmd.tick - INTERP_TICKS, Math.max(1, this.tick - LAGCOMP_HISTORY_TICKS), this.tick);
     for (let s = 0; s < shots; s++) this.fireOnce(shooter, def, weaponId, rewindTick);
   }
 

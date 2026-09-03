@@ -14,7 +14,7 @@ import type WebSocket from 'ws';
 
 import { BOT_REGULAR, DEFAULT_PORT, MAP_COMPOUND, MODE_ANY, ROOM_CODE_ALPHABET, ROOM_CODE_LEN, TICK_DT } from '../shared/constants.ts';
 import { decodeMessage, encodeError } from '../shared/protocol.ts';
-import { ERR_ROOM_NOT_FOUND } from '../shared/types.ts';
+import { ERR_BAD_VERSION, ERR_ROOM_NOT_FOUND } from '../shared/types.ts';
 import { Room } from '../shared/net/room.ts';
 import { WsTransport } from './ws-transport.ts';
 
@@ -190,7 +190,7 @@ export function createServer(opts: CreateServerOptions): GameServer {
 
       const msg = decodeMessage(data);
       if (!msg || msg.kind !== 'hello') {
-        transport.send(encodeError(1, 'expected HELLO'));
+        transport.send(encodeError(ERR_BAD_VERSION, 'expected HELLO'));
         transport.close();
         return;
       }

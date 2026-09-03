@@ -18,6 +18,7 @@ import {
   FRAG_DAMAGE_MAX,
   FRAG_DAMAGE_MIN,
   HEALTH_MAX,
+  INTERP_TICKS,
   MAT_CONCRETE,
   PROJ_FRAG,
   TEAM_A,
@@ -151,21 +152,21 @@ test('lag-compensated raycast hits a target at its rewound position even though 
   shooter.pos.x = 0; shooter.pos.y = 0; shooter.pos.z = 0; shooter.yaw = 0;
   target.pos.x = 0; target.pos.y = 0; target.pos.z = -10;
 
-  // Record several ticks of history while the target sits at z = -10 ...
+  // Record history while the target sits at z = -10 ...
+  const history = new HitHistory();
   let rewoundTick = 0;
   for (let i = 0; i < 5; i++) {
     world.step(TICK_DT);
-    if (i === 2) rewoundTick = world.tick; // remember a tick where the target was still at z=-10
+    if (i === 2) {
+      rewoundTick = world.tick;
+      history.record(rewoundTick, [shooter, target]); // capture the historical position HERE, before it moves
+    }
   }
 
   // ... then the target moves far away (as if the network is still catching up on the shooter's client).
   target.pos.x = 50; target.pos.z = 50;
-  world.step(TICK_DT); // this records the NEW position at the newest tick; older frames are untouched
+  world.step(TICK_DT);
 
-  const history = new HitHistory();
-  // Re-derive an equivalent history independently to test HitHistory in isolation
-  // in addition to exercising it indirectly through World.fireOnce below.
-  history.record(rewoundTick, [shooter, target]);
   const out = { id: 0, zone: -1, dist: 0, point: vec3() };
   const dir = vec3(0, 0, -1);
   const origin = vec3(0, eyeHeightGuess(shooter), 0);
@@ -179,6 +180,45 @@ function eyeHeightGuess(p: { pos: { y: number } }): number {
   // into the test just to compute an eye offset for a synthetic raycast origin.
   return p.pos.y + 1.6;
 }
+
+test('World.step: a fired shot resolves against the target rewound position, killing it even though it has since moved away', async () => {
+  const world = await makeWorld();
+  const shooter = world.addPlayer(1, 'shooter', TEAM_A, false, defaultLoadout());
+  const target = world.addPlayer(2, 'target', TEAM_B, false, defaultLoadout());
+  shooter.alive = true;
+  target.alive = true;
+  shooter.pos.x = 0; shooter.pos.y = 0; shooter.pos.z = 0; shooter.yaw = 0; shooter.pitch = 0;
+  target.pos.x = 0; target.pos.y = 0; target.pos.z = -10;
+  target.health = 1;
+  shooter.slots[0]!.weapon = WEAPON_PISTOL;
+  shooter.slots[0]!.mag = 10;
+  shooter.slots[0]!.reserve = 0;
+  shooter.activeSlot = 0;
+
+  // Advance a handful of ticks with the target sitting at z=-10 so HitHistory
+  // has real frames recorded for it.
+  let tickWhenAtOldPos = 0;
+  for (let i = 0; i < 10; i++) {
+    world.step(TICK_DT);
+    tickWhenAtOldPos = world.tick;
+  }
+
+  // The target now moves out of the line of fire entirely...
+  target.pos.x = 50; target.pos.z = 50;
+
+  // ...and the shooter's input claims cmd.tick = tickWhenAtOldPos + INTERP_TICKS,
+  // so World's rewindTick formula (cmd.tick - INTERP_TICKS, clamped) lands
+  // exactly on tickWhenAtOldPos: this is exactly what a laggy client's cmd.tick
+  // stamp looks like when its shot was aimed while the target was still there.
+  const cmd = createInputCmd();
+  cmd.seq = 1;
+  cmd.tick = tickWhenAtOldPos + INTERP_TICKS;
+  cmd.yaw = 0; cmd.pitch = 0; cmd.buttons = BTN_FIRE;
+  world.applyInput(shooter.id, cmd);
+  world.step(TICK_DT);
+
+  assert.equal(target.alive, false, 'the shot should hit the target at its rewound position, not its current (moved) one');
+});
 
 test('World.step resolves a fired shot into damage, a kill event and rules.onKill scoring', async () => {
   const world = await makeWorld();
@@ -197,11 +237,17 @@ test('World.step resolves a fired shot into damage, a kill event and rules.onKil
   shooter.slots[0]!.reserve = 0;
   shooter.activeSlot = 0;
 
+  // Warm the world up a few ticks (realistic: firing only ever happens after
+  // ticks have already elapsed, e.g. past WARMUP) so HitHistory has frames.
+  for (let i = 0; i < 3; i++) world.step(TICK_DT);
+
   const scoreBefore = world.rules.scores[0];
 
   const cmd = createInputCmd();
   cmd.seq = 1;
-  cmd.tick = 1;
+  // cmd.tick = world.tick + INTERP_TICKS collapses the rewind formula to "now",
+  // the same trick BotBrain.think uses (see shared/sim/bots.ts in the plan).
+  cmd.tick = world.tick + INTERP_TICKS;
   cmd.yaw = 0;
   cmd.pitch = 0;
   cmd.buttons = BTN_FIRE;
@@ -232,7 +278,9 @@ test('frag grenade explosion: lethal close in, wounding but survivable further o
   const proj = world.spawnProjectile(PROJ_FRAG, owner.id, owner.team, vec3(0, 0, 0), vec3(0, 0, 0), 0);
   explode(world, proj);
 
-  assert.ok(near.health <= HEALTH_MAX - FRAG_DAMAGE_MAX + 1, `near player should take ~max frag damage, health=${near.health}`);
+  // FRAG_DAMAGE_MAX (120) exceeds HEALTH_MAX (100), so full damage at point-blank range is always lethal.
+  assert.equal(near.alive, false, 'near player should have been killed by a point-blank frag');
+  assert.equal(near.health, 0);
   assert.ok(far.health < HEALTH_MAX, 'far player should take some damage');
   assert.ok(far.health > HEALTH_MAX - FRAG_DAMAGE_MAX, 'far player should take less than max damage');
   assert.ok(HEALTH_MAX - far.health >= FRAG_DAMAGE_MIN - 1, 'far player damage should be at least roughly the minimum falloff damage');
