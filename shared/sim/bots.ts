@@ -63,6 +63,12 @@ const TURN_RATE_DEG: Record<number, number> = { [BOT_RECRUIT]: 180, [BOT_REGULAR
 const AIM_ERROR_DEG: Record<number, number> = { [BOT_RECRUIT]: 6, [BOT_REGULAR]: 3, [BOT_VETERAN]: 1 };
 /** Reaction delay in ms before the first shot at a newly acquired target. */
 const REACTION_MS: Record<number, number> = { [BOT_RECRUIT]: 600, [BOT_REGULAR]: 400, [BOT_VETERAN]: 250 };
+/** Per-burst Gaussian aim error (degrees, 1σ): the bot "commits" to a slightly wrong aim for each burst, like a human. */
+const BURST_ERROR_DEG: Record<number, number> = { [BOT_RECRUIT]: 4.5, [BOT_REGULAR]: 2.2, [BOT_VETERAN]: 0.9 };
+/** Per-tick hand jitter while firing (degrees, uniform ±). */
+const TICK_JITTER_DEG: Record<number, number> = { [BOT_RECRUIT]: 1.2, [BOT_REGULAR]: 0.6, [BOT_VETERAN]: 0.25 };
+/** Pause between bursts by difficulty (seconds); weaker bots re-aim more slowly. */
+const BURST_PAUSE_S_BY_DIFF: Record<number, number> = { [BOT_RECRUIT]: 0.7, [BOT_REGULAR]: 0.45, [BOT_VETERAN]: 0.3 };
 const AIM_ERROR_DECAY_S = 1.5;
 
 const ENGAGE_RANGE = 60; // m, max distance a bot will acknowledge/engage a visible enemy
@@ -145,6 +151,8 @@ export class BotBrain implements BotBrainLike {
   private strafeSign = 1;
   private strafeTimerTicks = 0;
   private burstTicksLeft = 0;
+  private burstErrYaw = 0;
+  private burstErrPitch = 0;
   private pauseTicksLeft = 0;
 
   // FSM override state (RELOAD / GRENADE); FSM_ROAM covers both roaming and
@@ -295,6 +303,7 @@ export class BotBrain implements BotBrainLike {
         const reactionTicks = Math.round((reactionMs / 1000) * TICK_RATE);
         const reactionElapsed = this.targetAcquiredTick >= 0 && tick - this.targetAcquiredTick >= reactionTicks;
         this.stepFire(def, activeSlotState.weapon, dist, cmd, reactionElapsed);
+        if (cmd.buttons & BTN_FIRE) this.applyAimError(cmd);
       } else {
         // Not visible right now: hold fire, still stop bursts from resuming stale.
         this.burstTicksLeft = 0;
@@ -411,6 +420,27 @@ export class BotBrain implements BotBrainLike {
   // -------------------------------------------------------------------------
   // Firing
   // -------------------------------------------------------------------------
+  /** Standard normal via Box–Muller from the bot's own RNG (deterministic). */
+  private gauss(): number {
+    const u = Math.max(1e-9, 1 - this.rng());
+    const v = this.rng();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+
+  /** New burst: commit to a fresh aim error so the whole burst lands slightly off, difficulty-scaled. */
+  private rollBurstError(): void {
+    const sigma = ((BURST_ERROR_DEG[this.difficulty] ?? BURST_ERROR_DEG[BOT_REGULAR]!) * Math.PI) / 180;
+    this.burstErrYaw = this.gauss() * sigma;
+    this.burstErrPitch = this.gauss() * sigma * 0.6;
+  }
+
+  /** Perturb only the command's aim (the shot direction), not the bot's tracking, on firing ticks. */
+  private applyAimError(cmd: InputCmd): void {
+    const jitter = ((TICK_JITTER_DEG[this.difficulty] ?? TICK_JITTER_DEG[BOT_REGULAR]!) * Math.PI) / 180;
+    cmd.yaw = wrapAngle(cmd.yaw + this.burstErrYaw + (this.rng() - 0.5) * 2 * jitter);
+    cmd.pitch = clamp(cmd.pitch + this.burstErrPitch + (this.rng() - 0.5) * 2 * jitter, -Math.PI / 2, Math.PI / 2);
+  }
+
   /**
    * `reactionElapsed` gates only the *start* of a fresh burst/shot (the
    * plan's reaction delay before the first shot at a newly acquired target);
@@ -439,7 +469,7 @@ export class BotBrain implements BotBrainLike {
       this.burstTicksLeft -= 1;
       if (this.burstTicksLeft === 0) {
         this.pauseTicksLeft = burstWeapon
-          ? Math.round(BURST_PAUSE_S * TICK_RATE)
+          ? Math.round((BURST_PAUSE_S_BY_DIFF[this.difficulty] ?? BURST_PAUSE_S) * TICK_RATE)
           : Math.max(1, Math.round((60 / def.rpm) * TICK_RATE)); // single-shot cadence gap
       }
       return;
@@ -451,11 +481,13 @@ export class BotBrain implements BotBrainLike {
       const shots = BURST_MIN_SHOTS + Math.floor(this.rng() * (BURST_MAX_SHOTS - BURST_MIN_SHOTS + 1));
       const secondsPerShot = 60 / def.rpm;
       this.burstTicksLeft = Math.max(1, Math.round(shots * secondsPerShot * TICK_RATE));
+      this.rollBurstError();
       cmd.buttons |= BTN_FIRE;
       this.burstTicksLeft -= 1;
     } else {
       // Single shot: one tick on, then a cooldown gap before the next press
       // (sniper, pistol and shotgun all take this branch).
+      this.rollBurstError();
       cmd.buttons |= BTN_FIRE;
       this.pauseTicksLeft = Math.max(1, Math.round((60 / def.rpm) * TICK_RATE));
     }
