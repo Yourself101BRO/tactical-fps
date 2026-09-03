@@ -5,7 +5,7 @@
 
 import { createServer as createHttpServer } from 'node:http';
 import type { IncomingMessage, Server as HttpServer, ServerResponse } from 'node:http';
-import { readFile, stat } from 'node:fs/promises';
+import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { performance } from 'node:perf_hooks';
@@ -71,6 +71,23 @@ async function serveStatic(req: IncomingMessage, res: ServerResponse, staticDir:
     const body = JSON.stringify({ ok: true, ts: Date.now() });
     res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'content-length': Buffer.byteLength(body) });
     res.end(body);
+    return;
+  }
+
+  // Dev-only: browser automation posts JPEG frames here (DEBUG_SHOTS=1) so a
+  // hidden/headless tab can still be inspected from disk.
+  if (url.pathname === '/debug/shot' && process.env.DEBUG_SHOTS === '1') {
+    if (req.method !== 'POST') { res.writeHead(405); res.end(); return; }
+    const chunks: Buffer[] = [];
+    for await (const chunk of req) chunks.push(chunk as Buffer);
+    const dataUrl = Buffer.concat(chunks).toString('utf8');
+    const comma = dataUrl.indexOf(',');
+    const name = (url.searchParams.get('name') ?? 'shot').replace(/[^a-z0-9_-]/gi, '_');
+    const dir = path.join(process.cwd(), '.backup-w1', 'shots');
+    await mkdir(dir, { recursive: true });
+    await writeFile(path.join(dir, `${name}.jpg`), Buffer.from(dataUrl.slice(comma + 1), 'base64'));
+    res.writeHead(200, { 'content-type': 'text/plain' });
+    res.end('ok');
     return;
   }
 

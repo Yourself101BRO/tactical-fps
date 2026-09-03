@@ -189,6 +189,13 @@ async function boot(): Promise<void> {
   const characters = new CharacterManager(renderer.scene, assets, materials);
   const effects = new Effects(renderer.scene, materials, quality);
   if (lighting.csm) for (const m of materials.all()) lighting.csm.setupMaterial(m);
+  // The first-person scene is rendered separately and has no lights of its own:
+  // share the environment map and add a key/fill so metallic weapons read.
+  renderer.vmScene.environment = renderer.scene.environment;
+  const vmKey = new THREE.DirectionalLight(0xfff1dc, 2.2);
+  vmKey.position.set(0.6, 1.2, 0.8);
+  renderer.vmScene.add(vmKey);
+  renderer.vmScene.add(new THREE.HemisphereLight(0xcfe0f2, 0x4a4034, 0.8));
   const colliders = buildColliders(layout);
   visuals = { renderer, materials, lighting, cameraRig, viewmodel, characters, effects, layout, colliders };
 
@@ -1026,9 +1033,57 @@ function debugStep(frames = 1, dtMs = 1000 / 60): void {
   }
 }
 
+/**
+ * Run the game in real time for `seconds` using a MessageChannel scheduler,
+ * which browsers do not throttle the way they throttle timers and rAF in
+ * hidden tabs. Used to test remote (server/P2P) sessions from automation.
+ */
+function debugRun(seconds: number): Promise<void> {
+  session?.localHost?.setPaced(false);
+  return new Promise((resolve) => {
+    const ch = new MessageChannel();
+    const end = performance.now() + seconds * 1000;
+    let last = performance.now();
+    ch.port1.onmessage = () => {
+      const now = performance.now();
+      if (now - last >= 1000 / 60) {
+        last = now;
+        stepFrame(now);
+      }
+      if (now < end) ch.port2.postMessage(0);
+      else resolve();
+    };
+    ch.port2.postMessage(0);
+  });
+}
+
+/** Render one frame and post a JPEG of the canvas to the dev server (DEBUG_SHOTS=1) for inspection. */
+async function debugShot(name = 'shot', width = 960): Promise<string> {
+  stepFrame(performance.now());
+  const src = canvas;
+  const scale = Math.min(1, width / src.width);
+  const off = document.createElement('canvas');
+  off.width = Math.round(src.width * scale);
+  off.height = Math.round(src.height * scale);
+  const ctx = off.getContext('2d')!;
+  ctx.drawImage(src, 0, 0, off.width, off.height);
+  const dataUrl = off.toDataURL('image/jpeg', 0.75);
+  const res = await fetch(`/debug/shot?name=${encodeURIComponent(name)}`, { method: 'POST', body: dataUrl });
+  return `${res.status} ${off.width}x${off.height} ${Math.round(dataUrl.length / 1024)}KB`;
+}
+
 declare global {
   interface Window {
-    tfps: { session: () => Session | null; visuals: () => Visuals; app: AppState; settings: Settings; audio: AudioEngine; step: typeof debugStep };
+    tfps: {
+      session: () => Session | null;
+      visuals: () => Visuals;
+      app: AppState;
+      settings: Settings;
+      audio: AudioEngine;
+      step: typeof debugStep;
+      run: typeof debugRun;
+      shot: typeof debugShot;
+    };
   }
 }
-window.tfps = { session: () => session, visuals: () => visuals, app, settings, audio, step: debugStep };
+window.tfps = { session: () => session, visuals: () => visuals, app, settings, audio, step: debugStep, run: debugRun, shot: debugShot };
