@@ -308,6 +308,7 @@ export class TouchControls {
 
     if (cls === 'tc-btn-ads') {
       this.adsToggled = !this.adsToggled;
+      btnEl.classList.toggle('tc-toggled-on', this.adsToggled);
       return true;
     }
     if (cls === 'tc-btn-crouch') {
@@ -393,6 +394,7 @@ export class TouchControls {
 
     // Sustained full push -> auto-sprint.
     const now = performance.now();
+    this.stickEl.classList.toggle('tc-sprint-armed', magnitude > AUTOSPRINT_MAGNITUDE);
     if (magnitude > AUTOSPRINT_MAGNITUDE) {
       if (j.sprintHoldStart === null) j.sprintHoldStart = now;
     } else {
