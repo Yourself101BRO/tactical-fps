@@ -372,7 +372,9 @@ export class Room {
   }
 
   private handleLobbyCmd(playerId: number, cmd: LobbyCmd): void {
-    if (playerId !== this.hostId) return;
+    // Anyone may pick their own team; everything else is host-only.
+    const selfTeamPick = cmd.action === LOBBY_SET_TEAM && ((cmd.value >> 2) & 0x3f) === playerId;
+    if (playerId !== this.hostId && !selfTeamPick) return;
     switch (cmd.action) {
       case LOBBY_START:
         if (this.rules.phase === PHASE_LOBBY) this.rules.start(this.world);

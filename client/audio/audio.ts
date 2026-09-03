@@ -126,11 +126,13 @@ export class AudioEngine {
       el.loop = true;
       el.setAttribute('playsinline', '');
       el.volume = 0.0001; // inaudible, but "playing" is what routes the session through the right category
-      void el.play().catch(() => {
-        // Blocked until a later real gesture; unlock() will retry this whole method then.
+      void el.play().then(() => {
+        // Only a successful play() routes the session; a blocked one must be retried on the next gesture.
+        this.silentAudioEl = el;
+        this.iosMuteHint = true;
+      }).catch(() => {
+        // Blocked until a later real gesture; unlock() retries this whole method then.
       });
-      this.silentAudioEl = el;
-      this.iosMuteHint = true;
     } catch {
       // Best-effort only: worst case the game is silent with the ring switch on, nothing crashes.
     }

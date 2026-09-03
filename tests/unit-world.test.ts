@@ -77,8 +77,10 @@ function makeStubRules(): ModeRules {
     start(): void {},
     tick(): void {},
     onKill(_world: WorldView, killer, victim): void {
+      // Mode rules own kill/death bookkeeping (World never counts them itself).
+      victim.deaths++;
+      if (killer && killer.id !== victim.id) killer.kills++;
       if (killer) this.scores[killer.team === TEAM_A ? 0 : 1]++;
-      void victim;
     },
     onPlayerJoin(): void {},
     onPlayerLeave(): void {},
@@ -327,4 +329,16 @@ test('respawn resets health, position and grenade counts, and emits EV_RESPAWN',
   assert.equal(p.yaw, 1.2);
   assert.ok(p.lethalCount > 0);
   assert.ok(world.events.some((e) => e.type === 9 /* EV_RESPAWN */ && (e as { player: number }).player === p.id));
+});
+
+test('a kill increments the victim deaths and killer kills exactly once', async () => {
+  const world = await makeWorld();
+  const killer = world.addPlayer(1, 'k', TEAM_A, false, defaultLoadout());
+  const victim = world.addPlayer(2, 'v', TEAM_B, false, defaultLoadout());
+  killer.alive = true;
+  victim.alive = true;
+  world.kill(victim.id, killer.id, 0, false);
+  assert.equal(victim.deaths, 1);
+  assert.equal(killer.kills, 1);
+  assert.equal(victim.alive, false);
 });

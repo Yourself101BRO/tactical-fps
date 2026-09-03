@@ -468,9 +468,9 @@ export class World implements WorldView {
     victim.health = 0;
     victim.alive = false;
     victim.deathTick = this.tick;
-    victim.deaths++;
-    if (killer && killer.id !== victim.id) killer.kills++;
+    // Kills/deaths are owned by the mode rules (onKill) — never counted here too.
     if (this.rules) this.rules.onKill(this, killer, victim, weapon, headshot);
+    else { victim.deaths++; if (killer && killer.id !== victim.id) killer.kills++; }
     this.events.push({ type: EV_KILL, killer: killer ? killer.id : 0, victim: victim.id, weapon, headshot });
   }
 

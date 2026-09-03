@@ -45,6 +45,8 @@ export class WsTransport implements Transport {
   close(): void {
     if (this.closed) return;
     this.closed = true;
+    // Contract: onClose fires exactly once, including when we initiate the close (kicks rely on it).
+    this.onClose();
     try {
       this.ws.close();
     } catch {

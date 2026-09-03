@@ -42,6 +42,11 @@ export class Renderer {
   private gradePass: GradePass | null = null;
   private resolutionScale: number;
 
+  /** Current internal resolution scale (0.5..1); mobile starts below 1. */
+  get currentResolutionScale(): number {
+    return this.resolutionScale;
+  }
+
   constructor(canvas: HTMLCanvasElement, quality: Quality) {
     this.canvas = canvas;
     this.quality = quality;

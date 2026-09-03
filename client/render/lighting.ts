@@ -180,28 +180,31 @@ export function setupLighting(renderer: Renderer, assets: GameAssets, quality: Q
       usingHdri = true;
       hemiFill = new THREE.HemisphereLight(HEMI_FILL_SKY, HEMI_FILL_GROUND, HEMI_FILL_INTENSITY);
       scene.add(hemiFill);
+      csm = new CSM({
+        camera: renderer.camera,
+        parent: scene,
+        cascades: CSM_CASCADES,
+        maxFar: CSM_MAX_FAR,
+        mode: 'practical',
+        shadowMapSize: CSM_SHADOW_MAP_SIZE,
+        lightDirection: lightDir,
+        lightIntensity: CSM_LIGHT_INTENSITY,
+      });
+      for (const light of csm.lights) {
+        light.color.set(SUN_COLOR);
+        light.castShadow = true;
+        light.shadow.bias = -0.00015;
+      }
+      sun = csm.lights[0] ?? new THREE.DirectionalLight(SUN_COLOR, CSM_LIGHT_INTENSITY);
     } else {
+      // IBL unavailable (no HDRI, or the iPhone PMREM guard tripped): one plain
+      // shadow-casting sun, no CSM, exactly like the mobile tier.
       const fallback = applyFallbackSky(scene, quality, lightDir);
       hemiFill = fallback.hemi;
       mobileSun = fallback.sun;
+      sun = fallback.sun;
     }
 
-    csm = new CSM({
-      camera: renderer.camera,
-      parent: scene,
-      cascades: CSM_CASCADES,
-      maxFar: CSM_MAX_FAR,
-      mode: 'practical',
-      shadowMapSize: CSM_SHADOW_MAP_SIZE,
-      lightDirection: lightDir,
-      lightIntensity: CSM_LIGHT_INTENSITY,
-    });
-    for (const light of csm.lights) {
-      light.color.set(SUN_COLOR);
-      light.castShadow = true;
-      light.shadow.bias = -0.00015;
-    }
-    sun = csm.lights[0] ?? new THREE.DirectionalLight(SUN_COLOR, CSM_LIGHT_INTENSITY);
   } else {
     const fallback = applyFallbackSky(scene, quality, lightDir);
     hemiFill = fallback.hemi;
@@ -219,6 +222,7 @@ export function setupLighting(renderer: Renderer, assets: GameAssets, quality: Q
 
   const dispose = (): void => {
     csm?.dispose();
+    if (mobileSun) { scene.remove(mobileSun); mobileSun.dispose(); }
     if (scene.environment && scene.environment !== scene.background) scene.environment.dispose?.();
     if (scene.background instanceof THREE.Texture) scene.background.dispose();
     hemiFill?.dispose();

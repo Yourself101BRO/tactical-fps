@@ -470,7 +470,8 @@ export class ClientNet {
    */
   async reconnect(): Promise<void> {
     if (this.kind === 'local') return;
-    const rejoinHello: HelloMsg = { ...this.hello, rejoinId: this.welcome.playerId };
+    // Rejoin the room the server actually assigned (a host's original HELLO had an empty code).
+    const rejoinHello: HelloMsg = { ...this.hello, roomCode: this.welcome.roomCode, rejoinId: this.welcome.playerId };
     if (this.kind === 'ws') {
       if (!this.wsUrl) throw new Error('cannot reconnect: no WebSocket URL recorded');
       const fresh = await ClientNet.connectWs(this.wsUrl, rejoinHello);
@@ -488,6 +489,8 @@ export class ClientNet {
   private adopt(fresh: ClientNet): void {
     this.stopPing();
     fresh.stopPing();
+    // Drop the superseded transport so the server sees the old connection close.
+    try { this.link.close(); } catch { /* already closed */ }
     this.link = fresh.link;
     this.welcome = fresh.welcome;
     this.hello = fresh.hello;

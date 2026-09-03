@@ -255,9 +255,12 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const server = createServer({ port, staticDir, host: '0.0.0.0' });
   console.log(`tactical-fps server listening on http://0.0.0.0:${port} (ws upgrade at /ws, static from ${staticDir})`);
 
-  process.on('SIGINT', () => {
+  const shutdown = (): void => {
     console.log('\nShutting down...');
     server.close();
     process.exit(0);
-  });
+  };
+  // Hosts (Railway/Render/Fly/Docker) send SIGTERM on redeploys; terminals send SIGINT.
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
 }

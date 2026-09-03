@@ -77,7 +77,7 @@ const STYLE_ID = 'tfps-touch-controls-style';
 // the bottom, >=8px from the sides. touch.css (loaded later) may override any
 // of this — nothing here is !important.
 const INLINE_CSS = `
-.tc-root { position: fixed; inset: 0; z-index: 500; touch-action: none; }
+.tc-root { position: fixed; inset: 0; z-index: 50; touch-action: none; }
 .tc-joystick-zone { position: absolute; left: 0; top: 0; width: ${JOYSTICK_ZONE_FRACTION * 100}%; height: 100%; }
 .tc-look-zone { position: absolute; right: 0; top: 0; width: ${(1 - JOYSTICK_ZONE_FRACTION) * 100}%; height: 100%; }
 .tc-joystick { position: absolute; width: 128px; height: 128px; margin: -64px; border-radius: 50%;
@@ -181,7 +181,7 @@ export class TouchControls {
     this.ensureStyle();
 
     const container = document.createElement('div');
-    container.className = 'tc-root';
+    container.className = 'tc-root tc-layer';
     container.hidden = true;
 
     const joystickZone = document.createElement('div');

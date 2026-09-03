@@ -26,6 +26,7 @@ import {
   EV_RELOAD,
   EV_RESPAWN,
   EV_ROUND,
+  EV_THROW,
   FLASH_BLIND_TIME,
   FLASH_DEAFEN_TIME,
   FLASH_FADE_TIME,
@@ -37,6 +38,7 @@ import {
   MINIMAP_REVEAL_SECONDS,
   MODE_ANY,
   MODE_SND,
+  MOUNT_RECOIL_MULT,
   MOVE_AIR,
   MOVE_DEAD,
   MOVE_MOUNTED,
@@ -63,7 +65,8 @@ import { getMapLayout } from '../shared/map/layout.ts';
 import { buildColliders } from '../shared/map/colliders.ts';
 import type { MapColliders, MapLayout } from '../shared/map/types.ts';
 import { activeWeaponDef } from '../shared/sim/weaponstate.ts';
-import { recoilAt } from '../shared/weapons.ts';
+import { recoilAt, spreadFor } from '../shared/weapons.ts';
+import { canMantle } from '../shared/movement.ts';
 import { mulberry32 } from '../shared/math.ts';
 import { Room } from '../shared/net/room.ts';
 
@@ -298,6 +301,8 @@ interface Session {
   stepDist: Map<number, number>;
   lastDeadButtons: number;
   spectateCycle: boolean;
+  /** Set when the transport closed unexpectedly; cleared by a successful reconnect. */
+  connectionLost: boolean;
   lowFrameTime: number;
   resolutionScale: number;
   recoilRng: () => number;
@@ -315,6 +320,7 @@ async function connectWith(label: string, connect: () => Promise<ClientNet>, loc
     net = await connect();
   } catch (err) {
     ui.hideMessage();
+    hostedRoom = null;
     localHost?.stop();
     peerHost?.stop();
     ui.showConnectError((err as Error).message || 'Could not connect', () => showMenu(), () => showMenu());
@@ -398,8 +404,9 @@ function openSession(net: ClientNet, localHost: LocalHost | null, peerHost: Peer
     stepDist: new Map(),
     lastDeadButtons: 0,
     spectateCycle: false,
+    connectionLost: false,
     lowFrameTime: 0,
-    resolutionScale: 1,
+    resolutionScale: visuals.renderer.currentResolutionScale,
     recoilRng: mulberry32(net.welcome.playerId * 7919 + 17),
   };
   session = s;
@@ -421,7 +428,10 @@ function openSession(net: ClientNet, localHost: LocalHost | null, peerHost: Peer
     leaveSession(`Disconnected: ${message}`);
   };
   net.onClose = () => {
-    if (session === s && net.kind !== 'local') scheduleReconnect(s);
+    if (session !== s || net.kind === 'local') return;
+    s.connectionLost = true;
+    // Reconnect immediately when visible; a hidden tab waits for visibilitychange.
+    if (!document.hidden) scheduleReconnect(s);
   };
   input.onMenu = () => togglePause(s);
 
@@ -455,7 +465,7 @@ function scheduleReconnect(s: Session): void {
   reconnecting = true;
   ui.showReconnecting(true);
   s.net.reconnect()
-    .then(() => { ui.showReconnecting(false); })
+    .then(() => { s.connectionLost = false; ui.showReconnecting(false); })
     .catch((err: Error) => { leaveSession(`Connection lost (${err.message})`); })
     .finally(() => { reconnecting = false; });
 }
@@ -557,17 +567,21 @@ function enterMatch(s: Session): void {
   s.hud.banner(s.roomState?.mode === MODE_SND ? 'Search & Destroy' : 'Match starting', 3);
 }
 
+function pauseHandlers(s: Session): { onResume: () => void; onSettings: () => void; onLeave: () => void } {
+  return {
+    onResume: () => togglePause(s),
+    onSettings: () => showSettings(() => ui.setPauseMenu(true, pauseHandlers(s))),
+    onLeave: () => leaveSession(),
+  };
+}
+
 function togglePause(s: Session): void {
   if (!s.inMatch) return;
   s.paused = !s.paused;
   s.input.setEnabled(!s.paused);
   if (s.paused) {
     if (document.pointerLockElement) document.exitPointerLock();
-    ui.setPauseMenu(true, {
-      onResume: () => togglePause(s),
-      onSettings: () => showSettings(() => { ui.setPauseMenu(true, { onResume: () => togglePause(s), onSettings: () => {}, onLeave: () => leaveSession() }); }),
-      onLeave: () => leaveSession(),
-    });
+    ui.setPauseMenu(true, pauseHandlers(s));
   } else {
     ui.setPauseMenu(false);
     if (!isTouch) s.input.requestPointerLock();
@@ -634,18 +648,12 @@ function handleEvent(s: Session, e: GameEvent): void {
       break;
     }
     case EV_HIT: {
+      // The Hud reacts to hit/plant/defuse/round events itself (hitmarker, damage
+      // arcs, banners) from the same snapshot; only non-HUD effects live here.
       if (e.attacker === s.localId) {
-        s.hud?.hitmarker(e.zone === ZONE_HEAD);
         playAt(guns?.hitmarker(e.zone === ZONE_HEAD), undefined, 0.7);
       }
       if (e.target === s.localId && local) {
-        const from = remotePosition(s, e.attacker, scratchVec);
-        if (from) {
-          const dx = from.x - local.pos.x, dz = from.z - local.pos.z;
-          // Angle of the attacker relative to the view yaw (0 = ahead, +right).
-          const angle = Math.atan2(dx, -dz) - local.yaw;
-          s.hud?.damageFrom(angle);
-        }
         s.damageVignette = Math.min(1, s.damageVignette + e.damage / 60);
         v.cameraRig.shake(Math.min(0.6, e.damage / 100));
       } else {
@@ -691,21 +699,15 @@ function handleEvent(s: Session, e: GameEvent): void {
       }
       break;
     }
-    case EV_PLANT: {
-      s.hud?.banner(`Bomb planted at ${e.site === 0 ? 'A' : 'B'}`, 3);
-      playAt(guns?.plantBeep(), undefined, 0.8);
-      break;
-    }
+    case EV_PLANT:
     case EV_DEFUSE: {
-      s.hud?.banner('Bomb defused', 3);
       playAt(guns?.plantBeep(), undefined, 0.8);
       break;
     }
-    case EV_ROUND: {
-      if (e.state === ROUND_START) s.hud?.banner(`Round ${e.round}`, 2.5);
-      else if (e.state === ROUND_END) {
-        const mine = local && e.winner === local.team;
-        s.hud?.banner(e.winner === TEAM_A || e.winner === TEAM_B ? (mine ? 'Round won' : 'Round lost') : 'Round over', 3);
+    case EV_THROW: {
+      if (e.player !== s.localId) {
+        const at = remotePosition(s, e.player, scratchVec);
+        if (at) { at.y += 1.4; playAt(guns?.grenadePin(), at, 0.6); }
       }
       break;
     }
@@ -765,7 +767,8 @@ function localTick(s: Session): void {
     guns?.fire(we.firedWeapon, { local: true }, audio);
     // Recoil is a view kick the player counteracts: apply it to the look, not the bullet.
     const kick = recoilAt(def, Math.max(0, local.shotIndex - 1), s.recoilRng);
-    s.input.setYawPitch(s.input.yaw + kick.yaw, s.input.pitch + kick.pitch);
+    const kickMult = local.mounted ? MOUNT_RECOIL_MULT : 1;
+    s.input.setYawPitch(s.input.yaw + kick.yaw * kickMult, s.input.pitch + kick.pitch * kickMult);
     const shell = v.viewmodel.getShellSpawnPoint();
     shell.getWorldPosition(scratchThree);
     scratchVec.x = scratchThree.x; scratchVec.y = scratchThree.y; scratchVec.z = scratchThree.z;
@@ -839,7 +842,8 @@ function updateObjectivePrompt(s: Session, local: PlayerState): void {
       if (Math.hypot(site.x - local.pos.x, site.z - local.pos.z) < SND_SITE_RADIUS) { s.hud?.setPrompt('PLANT'); return; }
     }
   }
-  s.hud?.setPrompt(local.moveState === MOVE_MOUNTED ? 'MOUNT' : null);
+  if (local.moveState === MOVE_MOUNTED) s.hud?.setPrompt('MOUNT');
+  else s.hud?.setPrompt(canMantle(local, visuals.colliders) ? 'MANTLE' : null);
 }
 
 // ---------------------------------------------------------------------------
@@ -980,7 +984,11 @@ function stepFrame(now: number): void {
     hud.showScope(v.viewmodel.scopeVisible);
     if (local && local.alive) {
       updateObjectivePrompt(s, local);
-      hud.setSpread(6 + (local.adsT > 0.5 ? 0 : 10) + Math.min(24, Math.hypot(local.vel.x, local.vel.z) * 2));
+      // Crosshair gap = the real hip-fire cone projected to pixels for the current FOV.
+      const spreadRad = spreadFor(activeWeaponDef(local), local);
+      const fovRad = (v.renderer.camera.fov * Math.PI) / 180;
+      const px = (Math.tan(spreadRad) / Math.tan(fovRad / 2)) * (canvas.clientHeight / 2);
+      hud.setSpread(Math.max(3, Math.min(80, px)));
     }
     for (const [id, t] of s.revealed) { const left = t - dt; if (left <= 0) s.revealed.delete(id); else s.revealed.set(id, left); }
     if (s.minimap && camState) {
@@ -1019,7 +1027,9 @@ document.addEventListener('visibilitychange', () => {
   } else {
     void audio.resume();
     const s = session;
-    if (s && s.net.kind !== 'local') scheduleReconnect(s);
+    // Only reconnect when the transport actually dropped while hidden; a live
+    // socket must not be replaced (that would leave a ghost player behind).
+    if (s && s.net.kind !== 'local' && s.connectionLost) scheduleReconnect(s);
   }
 });
 

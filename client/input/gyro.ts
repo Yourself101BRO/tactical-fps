@@ -39,8 +39,9 @@ export class Gyro {
    * this resolves true immediately.
    */
   async requestPermission(): Promise<boolean> {
-    const ctor = (typeof DeviceOrientationEvent !== 'undefined' ? DeviceOrientationEvent : undefined) as
-      | (DeviceOrientationEventCtorIOS & typeof DeviceOrientationEvent)
+    // iOS gates motion and orientation separately; we listen to devicemotion, so ask for that one.
+    const ctor = (typeof DeviceMotionEvent !== 'undefined' ? DeviceMotionEvent : undefined) as
+      | (DeviceOrientationEventCtorIOS & typeof DeviceMotionEvent)
       | undefined;
     if (!ctor || typeof ctor.requestPermission !== 'function') return true;
     try {

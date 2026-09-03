@@ -356,6 +356,21 @@ function tryStartMantle(state: PlayerState, colliders: MapColliders, out: Moveme
   return true;
 }
 
+/** Non-mutating version of tryStartMantle's detection, for HUD prompts. */
+export function canMantle(state: PlayerState, colliders: MapColliders): boolean {
+  if (!state.alive || !state.onGround || state.moveState === MOVE_MANTLE || state.mounted) return false;
+  const fx = -Math.sin(state.yaw), fz = -Math.cos(state.yaw);
+  const probeY = state.pos.y + MANTLE_MIN_HEIGHT;
+  if (!colliders.raycast(state.pos.x, probeY, state.pos.z, fx, 0, fz, MANTLE_RAY_DIST, scratchRayHit)) return false;
+  const probeDist = scratchRayHit.dist + PLAYER_RADIUS + 0.1;
+  const probeX = state.pos.x + fx * probeDist;
+  const probeZ = state.pos.z + fz * probeDist;
+  const topY = colliders.groundHeight(probeX, probeZ, state.pos.y + MANTLE_MAX_HEIGHT + 0.5);
+  const rise = topY - state.pos.y;
+  if (rise < MANTLE_MIN_HEIGHT || rise > MANTLE_MAX_HEIGHT) return false;
+  return hasHeadroom(probeX, topY, probeZ, PLAYER_RADIUS, HEIGHT_STAND, colliders);
+}
+
 function stepMantle(state: PlayerState, dt: number): void {
   state.mantleT += dt;
   const t = clamp01(state.mantleT / Math.max(state.mantleDuration, 1e-4));

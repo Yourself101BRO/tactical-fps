@@ -52,7 +52,7 @@ import {
 } from '../constants.ts';
 import { clamp, mulberry32, vdist, wrapAngle } from '../math.ts';
 import { eyeHeight } from '../movement.ts';
-import { WEAPONS } from '../weapons.ts';
+import { WEAPONS, recoilAt } from '../weapons.ts';
 
 // ---------------------------------------------------------------------------
 // BOT AI TUNABLES (see file header) — plan §8 numbers not carried in constants.ts
@@ -198,6 +198,19 @@ export class BotBrain implements BotBrainLike {
       cmd.yaw = this.aimYaw;
       cmd.pitch = this.aimPitch;
       return cmd;
+    }
+
+    // Recoil kicks the bot's view exactly like a human's (client/main.ts applies
+    // recoilAt to the player's look after each shot); the bot then has to turn
+    // back onto the target at its difficulty's turn rate, which is what gives
+    // sustained fire a believable, difficulty-scaled miss pattern.
+    if (self.firing) {
+      const def = WEAPONS[self.slots[self.activeSlot]!.weapon];
+      if (def) {
+        const kick = recoilAt(def, Math.max(0, self.shotIndex - 1), this.rng);
+        this.aimYaw = wrapAngle(this.aimYaw + kick.yaw);
+        this.aimPitch = clamp(this.aimPitch + kick.pitch, -Math.PI / 2, Math.PI / 2);
+      }
     }
 
     this.updatePerception(world, rules, self, tick);
