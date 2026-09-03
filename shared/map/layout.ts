@@ -184,6 +184,7 @@ const SPAWNS: SpawnPoint[] = [
   { team: TEAM_NONE, x: 24, y: 0, z: -2, yaw: 3.14 },
   { team: TEAM_NONE, x: 33, y: 0, z: 10, yaw: 2.0 },
   { team: TEAM_NONE, x: 24, y: 0, z: 22, yaw: 4.5 },
+  { team: TEAM_NONE, x: 41, y: 0, z: 5, yaw: 3.5 },
 ];
 
 const SITES: Site[] = [

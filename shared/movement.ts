@@ -268,15 +268,15 @@ function handleSlide(state: PlayerState, cmd: InputCmd, dt: number, out: Movemen
     if (cmd.buttons & BTN_PRONE) state.stance = STANCE_PRONE;
 
     if (cmd.buttons & BTN_JUMP) {
-      finishSlide(state, out, true);
+      finishSlide(state, out, true, true);
       return true;
     }
     if (!(cmd.buttons & BTN_CROUCH) && !(cmd.buttons & BTN_PRONE)) {
-      finishSlide(state, out, true);
+      finishSlide(state, out, true, false);
       return false;
     }
     if (state.stateT >= SLIDE_DURATION) {
-      finishSlide(state, out, false);
+      finishSlide(state, out, false, false);
     }
     return false;
   }
@@ -305,7 +305,7 @@ function handleSlide(state: PlayerState, cmd: InputCmd, dt: number, out: Movemen
   return false;
 }
 
-function finishSlide(state: PlayerState, out: MovementEvents, early: boolean): void {
+function finishSlide(state: PlayerState, out: MovementEvents, early: boolean, viaJump: boolean): void {
   const len = Math.hypot(state.vel.x, state.vel.z);
   if (len > 1e-6) {
     const keep = len * SLIDE_CANCEL_KEEP;
@@ -316,6 +316,13 @@ function finishSlide(state: PlayerState, out: MovementEvents, early: boolean): v
   state.moveState = MOVE_IDLE; // reclassified by classifyMoveState() later this tick
   state.stateT = 0;
   out.slideCancelled = early;
+  if (viaJump) {
+    // Slide-hop: jump-cancelling a slide launches the player, COD-style.
+    state.vel.y = JUMP_VELOCITY;
+    state.onGround = false;
+    state.fallStartY = state.pos.y;
+    out.jumped = true;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -323,8 +330,11 @@ function finishSlide(state: PlayerState, out: MovementEvents, early: boolean): v
 // ---------------------------------------------------------------------------
 function tryStartMantle(state: PlayerState, colliders: MapColliders, out: MovementEvents): boolean {
   const fx = -Math.sin(state.yaw), fz = -Math.cos(state.yaw);
-  const chestY = state.pos.y + state.height * 0.6;
-  const hit = colliders.raycast(state.pos.x, chestY, state.pos.z, fx, 0, fz, MANTLE_RAY_DIST, scratchRayHit);
+  // Probe at the lowest mantleable height (not chest height): a ledge at the
+  // MANTLE_MIN_HEIGHT..MANTLE_MAX_HEIGHT low end can sit entirely below chest
+  // level, so a chest-height ray would sail over it and miss the detection.
+  const probeY = state.pos.y + MANTLE_MIN_HEIGHT;
+  const hit = colliders.raycast(state.pos.x, probeY, state.pos.z, fx, 0, fz, MANTLE_RAY_DIST, scratchRayHit);
   if (!hit) return false;
 
   const probeDist = scratchRayHit.dist + PLAYER_RADIUS + 0.1;
