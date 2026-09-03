@@ -1,3 +1,6 @@
+/* The hidden attribute must beat any author display rule (flex/grid screens). */
+[hidden] { display: none !important; }
+
 /* Dark military UI theme. Plan §7, §9 (iOS safe-area / dvh specifics). */
 
 :root {

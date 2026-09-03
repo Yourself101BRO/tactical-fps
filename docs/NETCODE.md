@@ -65,7 +65,7 @@ Events in SNAPSHOT: FIRE, HIT, KILL, IMPACT, EXPLODE, FLASHED, PLANT, DEFUSE, RO
 
 **P2P fallback**: host PeerJS id `tfps-<CODE>`; joiners open a `{reliable: false, serialization: 'raw'}` channel for inputs/snapshots and a `{reliable: true, serialization: 'raw'}` channel for HELLO/LOADOUT/ROOM_STATE. Host leaving ends the match (no host migration in v1). Google public STUN, no TURN: symmetric NATs fail, and after a 10 s timeout the UI says so and recommends the server path.
 
-**Sharing**: `npm run share` runs the server on 8080 plus `npx cloudflared tunnel --url http://localhost:8080` and prints the `https://*.trycloudflare.com` URL (WebSockets pass through). README also documents Railway/Render/Fly with `npm run build && npm start` and a `PORT` env var.
+**Sharing**: `npm run share` runs the server on 8090 plus `npx cloudflared tunnel --url http://localhost:8090` and prints the `https://*.trycloudflare.com` URL (WebSockets pass through). README also documents Railway/Render/Fly with `npm run build && npm start` and a `PORT` env var.
 
 ---
 

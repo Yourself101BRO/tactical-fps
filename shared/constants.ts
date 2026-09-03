@@ -45,7 +45,7 @@ export const MAX_MSG_SIZE = 4096;
 export const MAX_CHAT_LEN = 64;
 export const WS_BACKPRESSURE_BYTES = 65_536;
 export const ROOM_STATE_INTERVAL_TICKS = 30;
-export const DEFAULT_PORT = 8080;
+export const DEFAULT_PORT = 8090;
 export const PEER_ID_PREFIX = 'tfps-';
 
 // ---------------------------------------------------------------------------

@@ -5,7 +5,7 @@
 import { spawn } from 'node:child_process';
 
 const env = { ...process.env, PATH: `/opt/homebrew/bin:${process.env.PATH ?? ''}` };
-const port = process.env.PORT ? Number(process.env.PORT) : 8080;
+const port = process.env.PORT ? Number(process.env.PORT) : 8090;
 const urlPattern = /https:\/\/[a-z0-9-]+\.trycloudflare\.com/i;
 
 console.log(`Starting cloudflared tunnel to http://localhost:${port} ...`);

@@ -73,6 +73,10 @@ export class UI {
     root.appendChild(this.reconnectLayer);
     root.appendChild(this.messageLayer);
     root.appendChild(this.rotateLayer);
+    // Modal layers take pointer events when visible, so they must start hidden or
+    // they swallow every click on the menu underneath.
+    this.messageLayer.hidden = true;
+    this.pauseLayer.hidden = true;
 
     // Static overlays built once.
     const reconnectBanner = el('div', 'reconnect-banner', 'RECONNECTING…');
@@ -194,6 +198,12 @@ export class UI {
     modal.appendChild(panel);
     this.messageLayer.appendChild(modal);
     this.messageLayer.hidden = false;
+  }
+
+  /** Dismiss any modal message (e.g. a "Connecting…" notice once the connection is up). */
+  hideMessage(): void {
+    this.messageLayer.hidden = true;
+    this.messageLayer.replaceChildren();
   }
 
   // -- Rotate prompt -------------------------------------------------------

@@ -132,7 +132,9 @@ export class KeyboardMouse {
 
   requestPointerLock(): void {
     if (document.pointerLockElement !== this.canvas) {
-      this.canvas.requestPointerLock();
+      // Newer browsers return a promise; embedded/iframe contexts reject it. Never let that surface.
+      const result = this.canvas.requestPointerLock() as unknown as Promise<void> | undefined;
+      if (result && typeof result.catch === 'function') result.catch(() => {});
     }
   }
 

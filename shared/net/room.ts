@@ -55,6 +55,9 @@ import type { ModeRules } from '../sim/types.ts';
 import { BotBrain, botName } from '../sim/bots.ts';
 import { getMapLayout } from '../map/layout.ts';
 
+/** Max ticks Room.update() runs per call (0.5 s at 60 Hz). */
+const MAX_CATCHUP_TICKS = 30;
+
 export interface RoomOptions {
   code: string;
   mode: number;
@@ -425,13 +428,19 @@ export class Room {
     this.nowMs = nowMs;
     this.expireDisconnected();
     if (this.lastUpdateMs === null) this.lastUpdateMs = nowMs;
-    this.accumulatorMs += nowMs - this.lastUpdateMs;
+    // A non-monotonic clock (two callers with different time bases) must never
+    // drain the accumulator; ignore backwards steps.
+    this.accumulatorMs += Math.max(0, nowMs - this.lastUpdateMs);
     this.lastUpdateMs = nowMs;
     const stepMs = TICK_DT * 1000;
     // Avoid unbounded catch-up growth if the host stalls (e.g. GC pause, debugger).
-    this.accumulatorMs = Math.min(this.accumulatorMs, stepMs * 4);
+    // Cap catch-up at half a second of simulation. A browser host whose tab is
+    // throttled (background/hidden: timers at 1 Hz) then still produces the right
+    // number of ticks per wall-clock second, in bursts, instead of the match
+    // slowing to a crawl for every joined player.
+    this.accumulatorMs = Math.min(this.accumulatorMs, stepMs * MAX_CATCHUP_TICKS);
     let ticks = 0;
-    while (this.accumulatorMs >= stepMs && ticks < 4) {
+    while (this.accumulatorMs >= stepMs && ticks < MAX_CATCHUP_TICKS) {
       this.tickOnce();
       this.accumulatorMs -= stepMs;
       ticks++;
@@ -455,6 +464,15 @@ export class Room {
 
     this.world.step(TICK_DT);
     this.rules.tick(this.world, TICK_DT);
+
+    // Respawn pass: the rules decide *whether* a dead player may return (FFA/TDM
+    // after RESPAWN_DELAY, never mid-round in S&D) and *where*; the room applies it.
+    if (!this.rules.finished) {
+      for (const p of this.world.players.values()) {
+        if (p.alive || p.connState !== CONN_ACTIVE) continue;
+        if (this.rules.canRespawn(this.world, p)) this.world.respawn(p.id, this.rules.pickSpawn(this.world, p.team));
+      }
+    }
 
     for (const p of this.world.players.values()) {
       if (p.isBot) { p.ping = 0; continue; }

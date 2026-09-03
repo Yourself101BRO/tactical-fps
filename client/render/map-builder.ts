@@ -392,8 +392,15 @@ function placeLights(group: THREE.Group, layout: MapLayout, props: PropLibrary, 
   return lights;
 }
 
+/**
+ * Layout light intensities are authored on a 0..2 "artistic" scale; three.js point
+ * lights are in candela with physically-correct inverse-square decay, so a fixture
+ * that should light a room needs a few hundred candela.
+ */
+const POINT_LIGHT_CANDELA_PER_UNIT = 320;
+
 function placeOneLight(group: THREE.Group, spec: LightPlacement, props: PropLibrary): THREE.Light[] {
-  const light = new THREE.PointLight(spec.color, spec.intensity, spec.range, 2);
+  const light = new THREE.PointLight(spec.color, spec.intensity * POINT_LIGHT_CANDELA_PER_UNIT, spec.range, 2);
   light.position.set(spec.x, spec.y, spec.z);
   // Point lights never cast shadows: the sun (CSM on desktop, one shadow map
   // on mobile) carries all shadow cost; per-light cubemap shadows would blow

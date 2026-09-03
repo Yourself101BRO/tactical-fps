@@ -352,7 +352,8 @@ export class CharacterManager {
     applyTeamMaterials(root, this.materials, sp.team);
     poseGroup.add(root);
 
-    const handBone = isFallback ? null : findBoneByName(root, ['hand.r', 'hand_r', 'righthand']) ?? null;
+    // FBX2glTF strips the dots from Rigify names: 'DEF-hand.R' arrives as 'DEF-handR'.
+    const handBone = isFallback ? null : findBoneByName(root, ['hand.r', 'hand_r', 'def-handr', 'righthand', 'hand_right', 'r_hand']) ?? null;
 
     return {
       container,
@@ -512,24 +513,32 @@ export class CharacterManager {
     const def = WEAPONS[weaponId];
     const source = this.assets.weapons.get(weaponId);
     if (!def || !source) return;
+    // The loader already normalized the wrapper (barrel along -Z, length =
+    // def.modelLength, Muzzle/Grip empties). Never touch the wrapper's own
+    // transform; put it in a holder that undoes the bone's world scale and
+    // turns the barrel (-Z) along the bone's +Y axis, then slide the Grip
+    // empty onto the bone origin.
     const mesh = source.clone(true);
-
-    const box = new THREE.Box3().setFromObject(mesh);
-    const currentLen = Math.max(box.max.z - box.min.z, 1e-4);
-    const scale = def.modelLength / currentLen;
-    mesh.scale.setScalar(scale);
+    const holder = new THREE.Group();
+    holder.name = `weapon_holder_${def.id}`;
+    holder.add(mesh);
+    const attachPoint = ch.handBone ?? ch.root;
+    attachPoint.add(holder);
+    attachPoint.updateMatrixWorld(true);
+    const boneScale = new THREE.Vector3();
+    attachPoint.getWorldScale(boneScale);
+    holder.scale.set(1 / Math.max(boneScale.x, 1e-6), 1 / Math.max(boneScale.y, 1e-6), 1 / Math.max(boneScale.z, 1e-6));
+    if (ch.handBone) holder.rotation.set(Math.PI / 2, 0, 0);
+    holder.updateMatrixWorld(true);
 
     const grip = findByName(mesh, 'grip');
     if (grip) {
-      const gripWorld = new THREE.Vector3();
-      mesh.updateMatrixWorld(true);
-      grip.getWorldPosition(gripWorld);
-      mesh.position.sub(gripWorld);
+      const gripInHolder = new THREE.Vector3();
+      grip.getWorldPosition(gripInHolder);
+      holder.worldToLocal(gripInHolder);
+      mesh.position.sub(gripInHolder);
     }
-
-    const attachPoint = ch.handBone ?? ch.root;
-    attachPoint.add(mesh);
-    ch.weaponMesh = mesh;
+    ch.weaponMesh = holder;
   }
 
   private updateNameplate(ch: CharInstance, sp: SnapshotPlayer, camPos: Vec3): void {

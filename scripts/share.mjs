@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const env = { ...process.env, PATH: `/opt/homebrew/bin:${process.env.PATH ?? ''}` };
-const port = process.env.PORT ? Number(process.env.PORT) : 8080;
+const port = process.env.PORT ? Number(process.env.PORT) : 8090;
 env.PORT = String(port);
 
 function runToCompletion(cmd, args) {

@@ -26,4 +26,10 @@ export class LocalHost {
     this.loop.stop();
     this.room.close();
   }
+
+  /** Turn the wall-clock pacing loop on/off without closing the room (tests step the room manually). */
+  setPaced(paced: boolean): void {
+    if (paced) this.loop.start();
+    else this.loop.stop();
+  }
 }

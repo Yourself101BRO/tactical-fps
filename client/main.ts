@@ -259,6 +259,8 @@ interface Session {
   net: ClientNet;
   localHost: LocalHost | null;
   peerHost: PeerHost | null;
+  /** The Room this browser hosts (practice or P2P), driven from the frame loop; null when joined remotely. */
+  hostRoom: Room | null;
   localId: number;
   roomState: RoomState | null;
   lobby: LobbyController | null;
@@ -290,6 +292,8 @@ interface Session {
 }
 
 let session: Session | null = null;
+/** Room created by startHost for the P2P path, picked up by openSession. */
+let hostedRoom: Room | null = null;
 
 async function connectWith(label: string, connect: () => Promise<ClientNet>, localHost: LocalHost | null, peerHost: PeerHost | null): Promise<void> {
   app.go('connecting');
@@ -298,12 +302,14 @@ async function connectWith(label: string, connect: () => Promise<ClientNet>, loc
   try {
     net = await connect();
   } catch (err) {
+    ui.hideMessage();
     localHost?.stop();
     peerHost?.stop();
     ui.showConnectError((err as Error).message || 'Could not connect', () => showMenu(), () => showMenu());
     app.reset('menu');
     return;
   }
+  ui.hideMessage();
   openSession(net, localHost, peerHost);
 }
 
@@ -314,6 +320,7 @@ async function startHost(mode: number, bots: number, difficulty: number): Promis
   }
   const code = makeRoomCode();
   const room = new Room({ code, mode, mapId: MAP_COMPOUND, botCount: bots, botDifficulty: difficulty, seed: Date.now() & 0xffff });
+  hostedRoom = room;
   const host = new PeerHost(room);
   await connectWith(`Hosting room ${code} peer-to-peer…`, async () => {
     await host.start(code, hello(code, mode, bots));
@@ -354,6 +361,7 @@ function openSession(net: ClientNet, localHost: LocalHost | null, peerHost: Peer
     net,
     localHost,
     peerHost,
+    hostRoom: localHost?.room ?? hostedRoom,
     localId: net.welcome.playerId,
     roomState: null,
     lobby: null,
@@ -413,6 +421,7 @@ function leaveSession(message?: string): void {
   const s = session;
   if (!s) return;
   session = null;
+  hostedRoom = null;
   s.net.close();
   s.localHost?.stop();
   s.peerHost?.stop();
@@ -829,7 +838,14 @@ let portrait = false;
 
 function frame(now: number): void {
   requestAnimationFrame(frame);
-  const dt = Math.min(0.1, lastFrame ? (now - lastFrame) / 1000 : TICK_DT);
+  stepFrame(now);
+}
+
+/** One frame of the game at time `now` (ms). Split from frame() so tests can step deterministically. */
+function stepFrame(now: number): void {
+  // Clamp to [0, 100 ms]: a clock that steps backwards (tab throttling, virtual
+  // clocks in tests) must never turn decays into growth.
+  const dt = Math.max(0, Math.min(0.1, lastFrame ? (now - lastFrame) / 1000 : TICK_DT));
   lastFrame = now;
   const s = session;
   const v = visuals;
@@ -850,6 +866,9 @@ function frame(now: number): void {
     return;
   }
 
+  // A browser-hosted room is paced from the frame loop: setInterval is throttled
+  // in background/embedded tabs, and Room.update() has its own accumulator.
+  if (s.hostRoom) s.hostRoom.update(now);
   s.net.advance(now);
 
   // Fixed 60 Hz input cadence, independent of the display refresh rate.
@@ -921,7 +940,7 @@ function frame(now: number): void {
 
   // Post-processing state: damage and flash.
   s.damageVignette = Math.max(0, s.damageVignette - dt * 1.5);
-  if (local && local.flashT > 0) {
+  if (local && local.alive && local.flashT > 0) {
     const total = FLASH_BLIND_TIME + FLASH_FADE_TIME;
     s.flashOverlay = Math.min(1, local.flashT / total * 1.6) * Math.max(0.3, local.flashStrength);
   } else {
@@ -992,7 +1011,24 @@ void boot().catch((err: unknown) => {
 });
 
 // Exposed for browser automation and debugging.
-declare global {
-  interface Window { tfps: { session: () => Session | null; app: AppState; settings: Settings } }
+let debugVirtualNow = 0;
+/**
+ * Advance the game by `frames` synthetic frames of `dtMs` each, driving the
+ * hosted room from the same virtual clock. Lets browser automation play the
+ * game deterministically even when the tab is hidden and rAF is throttled.
+ */
+function debugStep(frames = 1, dtMs = 1000 / 60): void {
+  if (debugVirtualNow === 0) debugVirtualNow = performance.now();
+  session?.localHost?.setPaced(false);
+  for (let i = 0; i < frames; i++) {
+    debugVirtualNow += dtMs;
+    stepFrame(debugVirtualNow);
+  }
 }
-window.tfps = { session: () => session, app, settings };
+
+declare global {
+  interface Window {
+    tfps: { session: () => Session | null; visuals: () => Visuals; app: AppState; settings: Settings; audio: AudioEngine; step: typeof debugStep };
+  }
+}
+window.tfps = { session: () => session, visuals: () => visuals, app, settings, audio, step: debugStep };
