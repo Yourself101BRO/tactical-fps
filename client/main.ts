@@ -1110,7 +1110,19 @@ declare global {
       step: typeof debugStep;
       run: typeof debugRun;
       shot: typeof debugShot;
+      /** Test hook: pretend the dedicated server is (un)reachable so Host/Join take the P2P path. */
+      setReachable: (v: boolean) => void;
     };
   }
 }
-window.tfps = { session: () => session, visuals: () => visuals, app, settings, audio, step: debugStep, run: debugRun, shot: debugShot };
+window.tfps = {
+  session: () => session,
+  visuals: () => visuals,
+  app,
+  settings,
+  audio,
+  step: debugStep,
+  run: debugRun,
+  shot: debugShot,
+  setReachable: (v: boolean) => { reachable = v; if (app.screen === 'menu') showMenu(); },
+};

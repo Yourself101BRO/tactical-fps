@@ -29,8 +29,7 @@ import { yawPitchToDir } from '../../shared/math.ts';
 import { weaponName } from '../../shared/weapons.ts';
 import type { LobbyPlayer, PlayerState, RoomState, Snapshot } from '../../shared/types.ts';
 import type { Vec3 } from '../../shared/types.ts';
-import { ICON_FLASH, ICON_FRAG, TEAM_GLYPH, svgIcon } from './killfeed.ts';
-import { Killfeed } from './killfeed.ts';
+import { ICON_FLASH, ICON_FRAG, Killfeed, TEAM_GLYPH, svgIcon } from './killfeed.ts';
 import type { Minimap } from './minimap.ts';
 
 export type PromptKind = 'MOUNT' | 'MANTLE' | 'PLANT' | 'DEFUSE' | null;
@@ -44,7 +43,7 @@ const PROMPT_TEXT: Record<Exclude<PromptKind, null>, string> = {
 /** Key-cap shown in the prompt chip. Mount/mantle map to physical keys; the
  * touch layout has no literal key, so those get a small icon glyph instead. */
 const PROMPT_KEY: Record<Exclude<PromptKind, null>, string> = {
-  MOUNT: '⎕', // ⎕ generic "hold" glyph, since mount has no single bound key
+  MOUNT: '●', // generic "hold" glyph, since mount has no single bound key
   MANTLE: 'SPACE',
   PLANT: 'F',
   DEFUSE: 'F',

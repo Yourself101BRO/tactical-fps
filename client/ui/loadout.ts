@@ -41,8 +41,12 @@ function normalize(value: number, min: number, max: number): number {
 /** Raw (pre-normalization) per-weapon metrics used for the stat bars. */
 function rawMetrics(w: WeaponDef): { damage: number; accuracy: number; rate: number; range: number; mobility: number; control: number } {
   const damage = w.damageValues.length > 0 ? Math.max(...w.damageValues) * (w.pellets > 1 ? w.pellets : 1) : 0;
-  // Lower hip/ADS spread cones mean a tighter, more accurate weapon.
-  const accuracy = 1 / (w.spreadStand + w.spreadAds + 0.001);
+  // Lower hip/ADS spread cones mean a tighter, more accurate weapon. The
+  // shotgun's spreadStand/spreadAds are unused (0) — its pattern comes from
+  // pelletConeHip/pelletConeAds instead, so multi-pellet weapons read those.
+  const hipSpread = w.pellets > 1 ? w.pelletConeHip : w.spreadStand;
+  const adsSpread = w.pellets > 1 ? w.pelletConeAds : w.spreadAds;
+  const accuracy = 1 / (hipSpread + adsSpread + 0.001);
   const rate = w.rpm;
   const range = w.damageRanges.length > 0 ? w.damageRanges[w.damageRanges.length - 1]! : 0;
   const mobility = w.adsMoveSpeed;
