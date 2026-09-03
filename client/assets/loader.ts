@@ -419,11 +419,28 @@ async function loadGrenades(index: AssetIndex): Promise<Map<number, THREE.Object
     return out;
   }
 
+  /** Centre a set of objects in a wrapper scaled to a 9 cm tall grenade. */
+  const wrap = (objects: THREE.Object3D[]): THREE.Object3D => {
+    const group = new THREE.Group();
+    for (const o of objects) group.add(o.clone(true));
+    const box = new THREE.Box3().setFromObject(group);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    for (const child of group.children) child.position.sub(center);
+    const wrapper = new THREE.Group();
+    wrapper.add(group);
+    wrapper.scale.setScalar(0.09 / Math.max(size.y, 1e-4));
+    return wrapper;
+  };
+
   try {
     const root = await loadModelByUrl(url);
     applyDefaultMaterialIfUntextured(root);
     root.updateMatrixWorld(true);
 
+    // 1) Named objects (flash/smoke/frag) if the file has them.
     const found = new Set<THREE.Object3D>();
     for (const { kind, keywords } of kinds) {
       let match: THREE.Object3D | null = null;
@@ -432,33 +449,56 @@ async function loadGrenades(index: AssetIndex): Promise<Map<number, THREE.Object
         const lower = obj.name.toLowerCase();
         if (keywords.some((k) => lower.includes(k))) match = obj;
       });
-      // Captured in its own const, and re-annotated once more inside the
-      // `if`, so TS narrows it to non-null for Object3D's polymorphic-`this`
-      // `clone()` — `match` is reassigned inside the traverse closure above,
-      // which otherwise defeats narrowing on repeated reads.
       const picked: THREE.Object3D | null = match;
       if (picked) {
-        const found3d: THREE.Object3D = picked;
-        found.add(found3d);
-        const box = new THREE.Box3().setFromObject(found3d);
-        const size = new THREE.Vector3();
-        box.getSize(size);
-        const height = Math.max(size.y, 1e-4);
-        const wrapper = new THREE.Group();
-        const center = new THREE.Vector3();
-        box.getCenter(center);
-        const clone = found3d.clone(true);
-        clone.position.sub(center);
-        wrapper.add(clone);
-        wrapper.scale.setScalar(0.09 / height);
-        out.set(kind, wrapper);
-      } else {
-        out.set(kind, makeFallbackGrenade(kind));
+        found.add(picked);
+        out.set(kind, wrap([picked]));
       }
     }
+    if (out.size === kinds.length) return out;
+
+    // 2) Generic object names ("Cylinder.003", "Torus.002", ...): the pack lays the
+    // three grenades out side by side, so cluster meshes by their X centroid into
+    // three groups and classify by silhouette — the frag has the sphere body, the
+    // flashbang carries the torus ring, the smoke is what remains.
+    const meshes: Array<{ obj: THREE.Object3D; x: number; name: string }> = [];
+    const centroid = new THREE.Vector3();
+    root.traverse((obj) => {
+      if (!(obj as THREE.Mesh).isMesh) return;
+      const lower = obj.name.toLowerCase();
+      if (lower.includes('plane') || lower.includes('ground')) return;
+      new THREE.Box3().setFromObject(obj).getCenter(centroid);
+      meshes.push({ obj, x: centroid.x, name: lower });
+    });
+    if (meshes.length >= 3) {
+      meshes.sort((a, b) => a.x - b.x);
+      // Split at the two largest gaps along X.
+      const gaps = meshes.slice(1).map((m, i) => ({ i: i + 1, gap: m.x - meshes[i]!.x }));
+      gaps.sort((a, b) => b.gap - a.gap);
+      const cuts = gaps.slice(0, 2).map((g) => g.i).sort((a, b) => a - b);
+      const groups: Array<typeof meshes> = [meshes.slice(0, cuts[0]), meshes.slice(cuts[0], cuts[1]), meshes.slice(cuts[1])];
+      const has = (g: typeof meshes, key: string) => g.some((m) => m.name.includes(key));
+      const remaining = new Set(kinds.map((k) => k.kind).filter((k) => !out.has(k)));
+      const assign = (g: typeof meshes, kind: number) => {
+        if (!remaining.has(kind)) return;
+        remaining.delete(kind);
+        out.set(kind, wrap(g.map((m) => m.obj)));
+      };
+      const unassigned: Array<typeof meshes> = [];
+      for (const g of groups) {
+        if (has(g, 'sphere')) assign(g, PROJ_FRAG);
+        else if (has(g, 'torus')) assign(g, PROJ_FLASH);
+        else unassigned.push(g);
+      }
+      for (const g of unassigned) {
+        const next = [PROJ_SMOKE, PROJ_FLASH, PROJ_FRAG].find((k) => remaining.has(k));
+        if (next !== undefined) assign(g, next);
+      }
+    }
+    for (const { kind } of kinds) if (!out.has(kind)) out.set(kind, makeFallbackGrenade(kind));
   } catch (err) {
     console.warn('[assets] grenades.obj failed to load, using fallbacks:', err);
-    for (const { kind } of kinds) out.set(kind, makeFallbackGrenade(kind));
+    for (const { kind } of kinds) if (!out.has(kind)) out.set(kind, makeFallbackGrenade(kind));
   }
   return out;
 }

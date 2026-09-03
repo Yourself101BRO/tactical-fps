@@ -10,6 +10,8 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, t
   return e;
 }
 
+const MEDALS = ['🥇', '🥈', '🥉'];
+
 export class ResultsScreen {
   readonly element: HTMLDivElement;
 
@@ -25,11 +27,18 @@ export class ResultsScreen {
       : isTeamMode
         ? 'DEFEAT'
         : `${result.players.find((p) => p.id === result.winnerId)?.name ?? 'SOMEONE'} WINS`;
-    const title = el('div', 'results-title' + (localWon ? ' win' : ' loss'), headline);
-    panel.appendChild(title);
+
+    const banner = el('div', 'results-banner' + (localWon ? ' win' : isTeamMode ? ' loss' : ' neutral'));
+    if (isTeamMode) {
+      banner.classList.add(result.winnerTeam === TEAM_A ? 'team-a-bg' : 'team-b-bg');
+      banner.appendChild(el('div', 'results-banner-glyph', result.winnerTeam === TEAM_A ? '▲' : '▼'));
+    }
+    banner.appendChild(el('div', 'results-title', headline));
+    panel.appendChild(banner);
 
     const table = el('div', 'results-table');
     const header = el('div', 'results-row results-header');
+    header.appendChild(el('span', 'r-rank'));
     header.appendChild(el('span', 'r-name', 'Name'));
     header.appendChild(el('span', 'r-kills', 'K'));
     header.appendChild(el('span', 'r-deaths', 'D'));
@@ -37,17 +46,19 @@ export class ResultsScreen {
     table.appendChild(header);
 
     const sorted = [...result.players].sort((a, b) => b.score - a.score);
-    for (const p of sorted) {
-      const row = el('div', 'results-row' + (p.id === localId ? ' me' : ''));
+    sorted.forEach((p, i) => {
+      const row = el('div', 'results-row' + (p.id === localId ? ' me' : '') + (i < 3 ? ' medal-row' : ''));
+      row.appendChild(el('span', 'r-rank', i < 3 ? MEDALS[i]! : String(i + 1)));
       row.appendChild(el('span', 'r-name', p.name));
       row.appendChild(el('span', 'r-kills', String(p.kills)));
       row.appendChild(el('span', 'r-deaths', String(p.deaths)));
       row.appendChild(el('span', 'r-score', String(p.score)));
       table.appendChild(row);
-    }
+    });
     panel.appendChild(table);
 
-    const continueBtn = el('button', 'btn btn-primary', 'Continue') as HTMLButtonElement;
+    const continueBtn = el('button', 'btn btn-primary btn-continue', 'CONTINUE') as HTMLButtonElement;
+    continueBtn.type = 'button';
     continueBtn.addEventListener('click', () => onContinue());
     panel.appendChild(continueBtn);
 

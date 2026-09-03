@@ -19,6 +19,10 @@ function link(href: string, text: string): HTMLAnchorElement {
   return a;
 }
 
+function isPublicDomain(license: string): boolean {
+  return /cc0|public domain|cc-pd/i.test(license);
+}
+
 export class CreditsScreen {
   readonly element: HTMLDivElement;
 
@@ -33,19 +37,25 @@ export class CreditsScreen {
       list.appendChild(el('div', 'credits-empty', 'Asset list not loaded yet.'));
     }
     for (const entry of entries) {
-      const row = el('div', 'credit-row' + (entry.attributionRequired ? ' cc-by' : ''));
-      row.appendChild(el('div', 'credit-name', entry.name));
+      const pd = isPublicDomain(entry.license);
+      const row = el('div', 'credit-row' + (entry.attributionRequired ? ' cc-by' : pd ? ' cc0' : ''));
+      const rowHead = el('div', 'credit-row-head');
+      rowHead.appendChild(el('div', 'credit-name', entry.name));
+      if (entry.attributionRequired) rowHead.appendChild(el('span', 'license-badge badge-by', 'ATTRIBUTION REQUIRED'));
+      else if (pd) rowHead.appendChild(el('span', 'license-badge badge-cc0', 'CC0'));
+      row.appendChild(rowHead);
       row.appendChild(el('div', 'credit-author', `by ${entry.author}`));
       const licenseRow = el('div', 'credit-license');
       licenseRow.appendChild(link(entry.licenseUrl, entry.license));
-      if (entry.attributionRequired) licenseRow.appendChild(el('span', 'cc-by-badge', 'ATTRIBUTION REQUIRED'));
+      licenseRow.appendChild(el('span', 'credit-sep', '·'));
+      licenseRow.appendChild(link(entry.sourceUrl, 'Source'));
       row.appendChild(licenseRow);
-      row.appendChild(link(entry.sourceUrl, 'Source'));
       list.appendChild(row);
     }
     panel.appendChild(list);
 
     const backBtn = el('button', 'btn btn-primary', 'Back') as HTMLButtonElement;
+    backBtn.type = 'button';
     backBtn.addEventListener('click', () => onBack());
     panel.appendChild(backBtn);
 

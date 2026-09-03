@@ -9,33 +9,43 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, t
   return e;
 }
 
+const EYE_ICON =
+  '<svg viewBox="0 0 16 16" class="glyph-svg" aria-hidden="true"><path d="M1 8 C3 4 6 2.4 8 2.4 C10 2.4 13 4 15 8 C13 12 10 13.6 8 13.6 C6 13.6 3 12 1 8 Z" stroke="currentColor" stroke-width="1.2" fill="none"/><circle cx="8" cy="8" r="2.3" fill="currentColor"/></svg>';
+
 export class SpectateOverlay {
   readonly element: HTMLDivElement;
   private readonly nameEl: HTMLDivElement;
   private readonly healthFill: HTMLDivElement;
   private readonly healthText: HTMLSpanElement;
+  private lastHealth = -1;
 
   constructor() {
     this.element = el('div', 'spectate-overlay');
     this.element.hidden = true;
     const bar = el('div', 'spectate-bar');
-    bar.appendChild(el('div', 'spectate-label', 'SPECTATING'));
+    const label = el('div', 'spectate-label');
+    label.innerHTML = EYE_ICON;
+    label.appendChild(document.createTextNode('SPECTATING'));
+    bar.appendChild(label);
     this.nameEl = el('div', 'spectate-name');
     bar.appendChild(this.nameEl);
     const healthBar = el('div', 'spectate-health-bar');
     this.healthFill = el('div', 'spectate-health-fill');
     healthBar.appendChild(this.healthFill);
-    this.healthText = el('span', 'spectate-health-text');
     bar.appendChild(healthBar);
+    this.healthText = el('span', 'spectate-health-text');
     bar.appendChild(this.healthText);
-    bar.appendChild(el('div', 'spectate-hint', 'Fire / ADS or ◀ ▶ to cycle'));
+    bar.appendChild(el('div', 'spectate-hint', '◀ FIRE / ADS ▶  cycle'));
     this.element.appendChild(bar);
   }
 
   setTarget(name: string, health: number): void {
     this.nameEl.textContent = name;
     const pct = Math.max(0, Math.min(100, health));
+    if (Math.round(health) === this.lastHealth) return;
+    this.lastHealth = Math.round(health);
     this.healthFill.style.width = `${pct}%`;
+    this.healthFill.classList.toggle('low', health < 30);
     this.healthText.textContent = String(Math.ceil(health));
   }
 

@@ -528,6 +528,7 @@ function enterLobby(s: Session): void {
 function onRoomState(s: Session, state: RoomState): void {
   const prev = s.roomState;
   s.roomState = state;
+  visuals.characters.setNames(state.players);
   if (app.screen === 'lobby' && s.lobby) s.lobby.update(state);
   const wasLobby = !prev || prev.phase === PHASE_LOBBY;
   if (state.phase !== PHASE_LOBBY && state.phase !== PHASE_MATCH_END && !s.inMatch) {

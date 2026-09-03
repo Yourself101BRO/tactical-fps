@@ -229,6 +229,14 @@ interface CharInstance {
 }
 
 export class CharacterManager {
+  /** id → display name, fed from ROOM_STATE by the integrator. */
+  private readonly names = new Map<number, string>();
+
+  /** Update the nameplate names (call whenever a ROOM_STATE arrives). */
+  setNames(entries: Iterable<{ id: number; name: string }>): void {
+    for (const e of entries) this.names.set(e.id, e.name);
+  }
+
   private readonly scene: THREE.Scene;
   private readonly assets: GameAssets;
   private readonly materials: MaterialLibrary;
@@ -549,7 +557,7 @@ export class CharacterManager {
     }
     // SnapshotPlayer carries no player name (only LobbyPlayer does), so the
     // nameplate falls back to an id/bot label — see the report's gaps.
-    const text = sp.isBot ? `Bot ${sp.id}` : `P${sp.id}`;
+    const text = this.names.get(sp.id) ?? (sp.isBot ? `Bot ${sp.id}` : `P${sp.id}`);
     if (!ch.nameplate || ch.nameplateText !== text) {
       this.buildNameplate(ch, text);
     }

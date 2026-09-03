@@ -58,6 +58,17 @@ export class UI {
     this.root = root;
     this.settings = settings;
 
+    // Google Fonts for the MW-style condensed headings, with a robust local
+    // fallback stack (styles.css --font-head/--font-body) so the UI still
+    // looks right offline. Guarded so re-instantiating UI never double-injects.
+    if (!document.getElementById('ui-font-link')) {
+      const fontLink = document.createElement('link');
+      fontLink.id = 'ui-font-link';
+      fontLink.rel = 'stylesheet';
+      fontLink.href = 'https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500&display=swap';
+      document.head.appendChild(fontLink);
+    }
+
     this.screensLayer = el('div', 'ui-layer ui-screens');
     this.hudLayer = el('div', 'ui-layer ui-hud-layer');
     this.overlayLayer = el('div', 'ui-layer ui-overlays');
@@ -85,7 +96,8 @@ export class UI {
 
     const rotatePrompt = el('div', 'rotate-prompt');
     rotatePrompt.appendChild(el('div', 'rotate-icon', '⟳'));
-    rotatePrompt.appendChild(el('div', 'rotate-text', 'Rotate your device to landscape'));
+    rotatePrompt.appendChild(el('div', 'rotate-title', 'ROTATE DEVICE'));
+    rotatePrompt.appendChild(el('div', 'rotate-text', 'Tactical FPS plays in landscape only.'));
     rotatePrompt.hidden = true;
     this.rotateLayer.appendChild(rotatePrompt);
   }
@@ -186,9 +198,11 @@ export class UI {
     this.messageLayer.textContent = '';
     const modal = el('div', 'modal-backdrop');
     const panel = el('div', 'modal-panel');
+    panel.appendChild(el('div', 'modal-accent'));
     panel.appendChild(el('div', 'modal-title', title));
     panel.appendChild(el('div', 'modal-text', text));
     const okBtn = el('button', 'btn btn-primary', 'OK') as HTMLButtonElement;
+    okBtn.type = 'button';
     okBtn.addEventListener('click', () => {
       this.messageLayer.textContent = '';
       this.messageLayer.hidden = true;
@@ -221,13 +235,17 @@ export class UI {
   // -- Connect error -------------------------------------------------------
   showConnectError(text: string, onRetry: () => void, onBack: () => void): void {
     const screen = el('div', 'screen connect-error-screen');
-    const panel = el('div', 'panel');
-    panel.appendChild(el('div', 'connect-error-title', 'Connection Failed'));
+    const panel = el('div', 'panel connect-error-panel');
+    const icon = el('div', 'connect-error-icon', '⚠');
+    panel.appendChild(icon);
+    panel.appendChild(el('div', 'connect-error-title', 'CONNECTION FAILED'));
     panel.appendChild(el('div', 'connect-error-text', text));
     const actions = el('div', 'connect-error-actions');
     const retryBtn = el('button', 'btn btn-primary', 'Retry') as HTMLButtonElement;
+    retryBtn.type = 'button';
     retryBtn.addEventListener('click', () => onRetry());
     const backBtn = el('button', 'btn', 'Back to Menu') as HTMLButtonElement;
+    backBtn.type = 'button';
     backBtn.addEventListener('click', () => onBack());
     actions.appendChild(retryBtn);
     actions.appendChild(backBtn);
@@ -246,12 +264,16 @@ export class UI {
     this.pauseLayer.textContent = '';
     const modal = el('div', 'modal-backdrop');
     const panel = el('div', 'modal-panel pause-panel');
+    panel.appendChild(el('div', 'modal-accent'));
     panel.appendChild(el('div', 'modal-title', 'PAUSED'));
-    const resumeBtn = el('button', 'btn btn-primary', 'Resume') as HTMLButtonElement;
+    const resumeBtn = el('button', 'btn btn-primary', 'RESUME') as HTMLButtonElement;
+    resumeBtn.type = 'button';
     resumeBtn.addEventListener('click', () => handlers.onResume());
-    const settingsBtn = el('button', 'btn', 'Settings') as HTMLButtonElement;
+    const settingsBtn = el('button', 'btn', 'SETTINGS') as HTMLButtonElement;
+    settingsBtn.type = 'button';
     settingsBtn.addEventListener('click', () => handlers.onSettings());
-    const leaveBtn = el('button', 'btn btn-danger', 'Leave Match') as HTMLButtonElement;
+    const leaveBtn = el('button', 'btn btn-danger', 'LEAVE MATCH') as HTMLButtonElement;
+    leaveBtn.type = 'button';
     leaveBtn.addEventListener('click', () => handlers.onLeave());
     panel.appendChild(resumeBtn);
     panel.appendChild(settingsBtn);
