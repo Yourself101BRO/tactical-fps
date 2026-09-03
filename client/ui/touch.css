@@ -1,0 +1,226 @@
+/*
+ * Touch control layer styling. The DOM elements themselves (joystick, look
+ * zone, buttons) are created by the input module (client/input/touch.ts);
+ * this file only shapes/positions/colors them by the class names documented
+ * in the plan (§7 touch layout). Buttons stay empty <div>s by default — the
+ * ::before icon glyphs below render via the :empty selector and step aside
+ * automatically if the input module ever puts its own icon markup inside.
+ *
+ * --touch-opacity and --touch-scale are expected on a `.tc-layer` ancestor
+ * (or on :root), driven from Settings.touchOpacity / Settings.touchScale.
+ */
+
+.tc-layer {
+  --touch-opacity: 0.7;
+  --touch-scale: 1;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  touch-action: none;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Joystick (left zone, spawns at the touch point)                        */
+/* ---------------------------------------------------------------------- */
+.tc-joystick {
+  position: absolute;
+  width: 128px;
+  height: 128px;
+  margin-left: -64px;
+  margin-top: -64px;
+  border-radius: 50%;
+  background: rgba(232, 230, 227, var(--touch-opacity, 0.7));
+  opacity: 0.35;
+  border: 2px solid rgba(232, 230, 227, calc(var(--touch-opacity, 0.7) * 0.6));
+  pointer-events: none;
+  touch-action: none;
+  transform: scale(var(--touch-scale, 1));
+}
+
+.tc-stick {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 56px;
+  height: 56px;
+  margin-left: -28px;
+  margin-top: -28px;
+  border-radius: 50%;
+  background: rgba(242, 177, 52, var(--touch-opacity, 0.7));
+  pointer-events: none;
+  touch-action: none;
+}
+
+/* Right-half drag-look zone: invisible hit target, no visual chrome. */
+.tc-look-zone {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 55%;
+  height: 100%;
+  pointer-events: auto;
+  touch-action: none;
+  background: transparent;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Buttons: round, translucent, >=56px, icon glyph via ::before            */
+/* ---------------------------------------------------------------------- */
+.tc-btn {
+  position: absolute;
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
+  min-height: 56px;
+  border-radius: 50%;
+  background: rgba(26, 30, 35, var(--touch-opacity, 0.7));
+  border: 2px solid rgba(232, 230, 227, calc(var(--touch-opacity, 0.7) * 0.5));
+  color: rgba(232, 230, 227, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  line-height: 1;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transform: scale(var(--touch-scale, 1));
+  transform-origin: center;
+}
+.tc-btn:empty::before {
+  content: attr(data-icon);
+}
+.tc-btn.tc-active {
+  background: rgba(242, 177, 52, var(--touch-opacity, 0.7));
+  border-color: var(--accent, #f2b134);
+}
+
+/* Primary fire: large, bottom-right, thumb-natural. */
+.tc-btn-fire {
+  width: 76px;
+  height: 76px;
+  right: calc(24px + env(safe-area-inset-right));
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  background: rgba(214, 69, 65, var(--touch-opacity, 0.7));
+}
+.tc-btn-fire:empty::before {
+  content: '●';
+}
+
+/* Secondary tap-fire sits near ADS (not beside the joystick, where it would
+   collide with joystick spawn detection) — matches COD Mobile's placement. */
+.tc-btn-fire2 {
+  right: calc(110px + env(safe-area-inset-right));
+  bottom: calc(120px + env(safe-area-inset-bottom));
+}
+.tc-btn-fire2:empty::before {
+  content: '●';
+  font-size: 14px;
+}
+
+.tc-btn-ads {
+  right: calc(20px + env(safe-area-inset-right));
+  bottom: calc(120px + env(safe-area-inset-bottom));
+}
+.tc-btn-ads:empty::before {
+  content: '◎';
+}
+
+.tc-btn-jump {
+  right: calc(96px + env(safe-area-inset-right));
+  bottom: calc(24px + env(safe-area-inset-bottom));
+}
+.tc-btn-jump:empty::before {
+  content: '⤒';
+}
+
+.tc-btn-crouch {
+  right: calc(170px + env(safe-area-inset-right));
+  bottom: calc(24px + env(safe-area-inset-bottom));
+}
+.tc-btn-crouch:empty::before {
+  content: '⤓';
+}
+
+.tc-btn-reload {
+  right: calc(24px + env(safe-area-inset-right));
+  bottom: calc(196px + env(safe-area-inset-bottom));
+}
+.tc-btn-reload:empty::before {
+  content: '⟲';
+}
+
+.tc-btn-swap {
+  right: calc(96px + env(safe-area-inset-right));
+  bottom: calc(196px + env(safe-area-inset-bottom));
+  width: 48px;
+  height: 48px;
+  font-size: 18px;
+}
+.tc-btn-swap:empty::before {
+  content: '⇄';
+}
+
+.tc-btn-lethal {
+  left: calc(170px + env(safe-area-inset-left));
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  width: 48px;
+  height: 48px;
+  font-size: 18px;
+}
+.tc-btn-lethal:empty::before {
+  content: '💣';
+}
+
+.tc-btn-tactical {
+  left: calc(96px + env(safe-area-inset-left));
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  width: 48px;
+  height: 48px;
+  font-size: 18px;
+}
+.tc-btn-tactical:empty::before {
+  content: '⚡';
+}
+
+.tc-btn-melee {
+  left: calc(24px + env(safe-area-inset-left));
+  bottom: calc(96px + env(safe-area-inset-bottom));
+  width: 48px;
+  height: 48px;
+  font-size: 18px;
+}
+.tc-btn-melee:empty::before {
+  content: '🔪';
+}
+
+.tc-btn-score {
+  top: calc(12px + env(safe-area-inset-top));
+  right: calc(12px + env(safe-area-inset-right));
+  width: 44px;
+  height: 44px;
+  font-size: 14px;
+}
+.tc-btn-score:empty::before {
+  content: '☰';
+}
+
+.tc-btn-menu {
+  top: calc(12px + env(safe-area-inset-top));
+  left: calc(12px + env(safe-area-inset-left));
+  width: 44px;
+  height: 44px;
+  font-size: 14px;
+}
+.tc-btn-menu:empty::before {
+  content: '≡';
+}
+
+/* Landscape-only: the rotate prompt (styles.css) covers portrait; this file
+   just makes sure the touch layer never renders in portrait even if shown. */
+@media (orientation: portrait) {
+  .tc-layer {
+    display: none;
+  }
+}

@@ -351,7 +351,17 @@ function remapClips(clips: THREE.AnimationClip[], clipMap: Record<string, string
   const out: THREE.AnimationClip[] = [];
   for (const [canonical, sourceName] of Object.entries(clipMap)) {
     const src = bySource.get(sourceName);
-    if (!src) continue;
+    if (!src) {
+      // Common cause: the exported clip's internal name doesn't exactly match
+      // clipMap's value (Mixamo FBX exports name clips things like
+      // "mixamo.com|Idle" or "Armature|mixamo.com|Idle" depending on export
+      // settings) — see docs/CUSTOM_ASSETS.md for how to find the real name.
+      console.warn(
+        `[assets] custom character: clipMap["${canonical}"] = "${sourceName}" not found in the file's clips ` +
+          `(available: ${clips.map((c) => c.name).join(', ') || '(none)'})`,
+      );
+      continue;
+    }
     const clone = src.clone();
     clone.name = canonical;
     out.push(clone);

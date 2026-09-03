@@ -1,0 +1,36 @@
+{
+  "_comment": "Copy this file to manifest.json (same folder) and edit. Delete any section you don't want to override — the loader falls back to the default/procedural asset for anything missing. See docs/CUSTOM_ASSETS.md.",
+
+  "character": {
+    "url": "/assets/custom/character.fbx",
+    "scale": 1,
+    "clipMap": {
+      "Idle_Loop": "mixamo.com|Idle",
+      "Walk_Loop": "mixamo.com|Walking",
+      "Jog_Fwd_Loop": "mixamo.com|Jogging",
+      "Sprint_Loop": "mixamo.com|Fast Run",
+      "Crouch_Idle_Loop": "mixamo.com|Crouch Idle",
+      "Crouch_Fwd_Loop": "mixamo.com|Crouched Walking",
+      "Jump_Loop": "mixamo.com|Falling Idle",
+      "Pistol_Aim_Neutral": "mixamo.com|Aiming Idle",
+      "Pistol_Shoot": "mixamo.com|Firing Pistol",
+      "Pistol_Reload": "mixamo.com|Reload",
+      "Death01": "mixamo.com|Dying",
+      "Hit_Chest": "mixamo.com|Hit Reaction",
+      "Roll": "mixamo.com|Forward Roll"
+    },
+    "author": "Your name or the model's author",
+    "license": "e.g. Mixamo (Adobe) standard license",
+    "sourceUrl": "https://www.mixamo.com/"
+  },
+
+  "weapons": {
+    "ar": {
+      "url": "/assets/custom/weapons/ar.glb",
+      "scale": 1,
+      "author": "Model author",
+      "license": "e.g. CC-BY-4.0",
+      "sourceUrl": "https://sketchfab.com/3d-models/your-model"
+    }
+  }
+}

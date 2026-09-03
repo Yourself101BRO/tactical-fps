@@ -31,7 +31,7 @@ import type { Vec3 } from '../../shared/types.ts';
 import type { AudioEngine } from './audio.ts';
 
 // ---------------------------------------------------------------------------
-// Tiny synchronous DSP toolkit (plain Float32Array in, Float32Array out)
+// Tiny synchronous DSP toolkit (plain Float32Array<ArrayBuffer> in, Float32Array<ArrayBuffer> out)
 // ---------------------------------------------------------------------------
 
 // Module-local xorshift32 — deterministic-enough variety generator, not tied
@@ -49,7 +49,7 @@ function noiseSample(): number {
 }
 
 /** Chamberlin state-variable filter, one O(n) pass producing both taps. */
-function svf(input: Float32Array, sr: number, freq: number, q: number): { low: Float32Array; band: Float32Array } {
+function svf(input: Float32Array<ArrayBuffer>, sr: number, freq: number, q: number): { low: Float32Array<ArrayBuffer>; band: Float32Array<ArrayBuffer> } {
   const low = new Float32Array(input.length);
   const band = new Float32Array(input.length);
   const f = 2 * Math.sin((Math.PI * Math.min(freq, sr * 0.45)) / sr);
@@ -66,35 +66,35 @@ function svf(input: Float32Array, sr: number, freq: number, q: number): { low: F
   return { low, band };
 }
 
-function softClip(buf: Float32Array): void {
+function softClip(buf: Float32Array<ArrayBuffer>): void {
   for (let i = 0; i < buf.length; i++) buf[i] = Math.tanh(buf[i]!);
 }
 
-function mixAt(dst: Float32Array, src: Float32Array, offset: number, amp: number): void {
+function mixAt(dst: Float32Array<ArrayBuffer>, src: Float32Array<ArrayBuffer>, offset: number, amp: number): void {
   const n = Math.min(src.length, dst.length - offset);
   for (let i = 0; i < n; i++) dst[offset + i] += src[i]! * amp;
 }
 
-function expEnv(n: number, decayFrac: number): Float32Array {
+function expEnv(n: number, decayFrac: number): Float32Array<ArrayBuffer> {
   const env = new Float32Array(n);
   const tau = Math.max(1, n * decayFrac);
   for (let i = 0; i < n; i++) env[i] = Math.exp(-i / tau);
   return env;
 }
 
-function applyEnv(buf: Float32Array, env: Float32Array): Float32Array {
+function applyEnv(buf: Float32Array<ArrayBuffer>, env: Float32Array<ArrayBuffer>): Float32Array<ArrayBuffer> {
   const out = new Float32Array(buf.length);
   for (let i = 0; i < buf.length; i++) out[i] = buf[i]! * env[i]!;
   return out;
 }
 
-function whiteNoise(n: number): Float32Array {
+function whiteNoise(n: number): Float32Array<ArrayBuffer> {
   const out = new Float32Array(n);
   for (let i = 0; i < n; i++) out[i] = noiseSample();
   return out;
 }
 
-function sineSweep(n: number, sr: number, freqStart: number, freqEnd: number): Float32Array {
+function sineSweep(n: number, sr: number, freqStart: number, freqEnd: number): Float32Array<ArrayBuffer> {
   const out = new Float32Array(n);
   let phase = 0;
   for (let i = 0; i < n; i++) {
@@ -105,7 +105,7 @@ function sineSweep(n: number, sr: number, freqStart: number, freqEnd: number): F
   return out;
 }
 
-function toBuffer(ctx: AudioContext, data: Float32Array, sr: number): AudioBuffer {
+function toBuffer(ctx: AudioContext, data: Float32Array<ArrayBuffer>, sr: number): AudioBuffer {
   const buf = ctx.createBuffer(1, data.length, sr);
   buf.copyToChannel(data, 0);
   return buf;
@@ -137,7 +137,7 @@ export function shotParamsFor(weaponId: number): ShotParams {
 
 const TAIL_LEN = 0.8;
 
-function synthShot(sr: number, params: ShotParams, opts: { bassBoost?: boolean; lowpassOnly?: boolean } = {}): Float32Array {
+function synthShot(sr: number, params: ShotParams, opts: { bassBoost?: boolean; lowpassOnly?: boolean } = {}): Float32Array<ArrayBuffer> {
   const total = params.bodyLen + TAIL_LEN + 0.05;
   const n = Math.ceil(total * sr);
   const out = new Float32Array(n);
@@ -220,7 +220,7 @@ interface ImpulseOpts {
   thumpAmp?: number;
 }
 
-function synthImpulse(sr: number, opts: ImpulseOpts): Float32Array {
+function synthImpulse(sr: number, opts: ImpulseOpts): Float32Array<ArrayBuffer> {
   const totalLen = Math.max(opts.burstLen, opts.ringLen ?? 0, opts.thumpLen ?? 0);
   const n = Math.max(1, Math.ceil(totalLen * sr) + 1);
   const out = new Float32Array(n);
@@ -242,7 +242,7 @@ function synthImpulse(sr: number, opts: ImpulseOpts): Float32Array {
   return out;
 }
 
-function concatMix(sr: number, parts: { data: Float32Array; offsetSec: number }[]): Float32Array {
+function concatMix(sr: number, parts: { data: Float32Array<ArrayBuffer>; offsetSec: number }[]): Float32Array<ArrayBuffer> {
   let maxLen = 0;
   for (const p of parts) maxLen = Math.max(maxLen, Math.floor(p.offsetSec * sr) + p.data.length);
   const out = new Float32Array(maxLen);
@@ -251,7 +251,7 @@ function concatMix(sr: number, parts: { data: Float32Array; offsetSec: number }[
   return out;
 }
 
-function reloadClickData(sr: number, kind: 'magOut' | 'magIn' | 'charge' | 'shell'): Float32Array {
+function reloadClickData(sr: number, kind: 'magOut' | 'magIn' | 'charge' | 'shell'): Float32Array<ArrayBuffer> {
   switch (kind) {
     case 'magOut':
       return synthImpulse(sr, { burstLen: 0.05, burstDecay: 0.3, burstAmp: 0.5, filterFreq: 3000, ringFreq: 1800, ringLen: 0.08, ringDecay: 0.35 });
@@ -267,7 +267,7 @@ function reloadClickData(sr: number, kind: 'magOut' | 'magIn' | 'charge' | 'shel
   }
 }
 
-function hitmarkerData(sr: number, headshot: boolean): Float32Array {
+function hitmarkerData(sr: number, headshot: boolean): Float32Array<ArrayBuffer> {
   const freq = headshot ? 1900 : 1300;
   const n = Math.floor(0.05 * sr);
   const out = applyEnv(sineSweep(n, sr, freq, freq), expEnv(n, headshot ? 0.4 : 0.25));
@@ -279,11 +279,11 @@ function hitmarkerData(sr: number, headshot: boolean): Float32Array {
   return out;
 }
 
-function dryFireData(sr: number): Float32Array {
+function dryFireData(sr: number): Float32Array<ArrayBuffer> {
   return synthImpulse(sr, { burstLen: 0.015, burstDecay: 0.25, burstAmp: 0.6, filterFreq: 3000, ringFreq: 2600, ringLen: 0.02, ringDecay: 0.25 });
 }
 
-function explosionData(sr: number, big: boolean): Float32Array {
+function explosionData(sr: number, big: boolean): Float32Array<ArrayBuffer> {
   const tailLen = big ? 2.2 : 1.4;
   const bodyLen = big ? 0.35 : 0.22;
   const n = Math.ceil((bodyLen + tailLen) * sr);
@@ -302,7 +302,7 @@ function explosionData(sr: number, big: boolean): Float32Array {
   return out;
 }
 
-function flashbangData(sr: number): Float32Array {
+function flashbangData(sr: number): Float32Array<ArrayBuffer> {
   const n = Math.ceil(0.6 * sr);
   const out = new Float32Array(n);
   const bodyN = Math.floor(0.05 * sr);
@@ -313,7 +313,7 @@ function flashbangData(sr: number): Float32Array {
   return out;
 }
 
-function meleeSwingData(sr: number): Float32Array {
+function meleeSwingData(sr: number): Float32Array<ArrayBuffer> {
   // A noise burst swept through a moving bandpass centre frequency (up then
   // back down) reads as a "whoosh" much better than a static filter.
   const n = Math.floor(0.2 * sr);
@@ -334,15 +334,15 @@ function meleeSwingData(sr: number): Float32Array {
   return out;
 }
 
-function meleeHitData(sr: number): Float32Array {
+function meleeHitData(sr: number): Float32Array<ArrayBuffer> {
   return synthImpulse(sr, { burstLen: 0.08, burstDecay: 0.25, burstAmp: 0.8, filterFreq: 500, thumpFreq: 90, thumpLen: 0.07, thumpDecay: 0.35 });
 }
 
-function grenadePinData(sr: number): Float32Array {
+function grenadePinData(sr: number): Float32Array<ArrayBuffer> {
   return synthImpulse(sr, { burstLen: 0.008, burstDecay: 0.3, burstAmp: 0.4, filterFreq: 5000, ringFreq: 3800, ringLen: 0.02, ringDecay: 0.25 });
 }
 
-function toneBeepData(sr: number, freq: number, len: number, decayFrac: number): Float32Array {
+function toneBeepData(sr: number, freq: number, len: number, decayFrac: number): Float32Array<ArrayBuffer> {
   const n = Math.floor(len * sr);
   const out = applyEnv(sineSweep(n, sr, freq, freq), expEnv(n, decayFrac));
   softClip(out);
@@ -383,7 +383,7 @@ const IMPACT_TONE: Record<number, MaterialTone> = {
   [MAT_FLESH]: { freq: 300, len: 0.06 },
 };
 
-function materialToneData(sr: number, tone: MaterialTone): Float32Array {
+function materialToneData(sr: number, tone: MaterialTone): Float32Array<ArrayBuffer> {
   const n = Math.max(1, Math.floor(tone.len * sr));
   const raw = whiteNoise(n);
   const filtered = tone.metallic ? svf(raw, sr, tone.freq, 6).band : svf(raw, sr, tone.freq, 1.5).low;

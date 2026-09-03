@@ -15,18 +15,7 @@ import {
   BTN_ALL,
   CONN_ACTIVE,
   CONN_DISCONNECTED,
-  ERR_BAD_NAME,
-  ERR_BAD_VERSION,
-  ERR_KICKED,
-  ERR_ROOM_FULL,
   HEALTH_MAX,
-  LOBBY_BACK_TO_LOBBY,
-  LOBBY_KICK,
-  LOBBY_SET_BOTS,
-  LOBBY_SET_BOT_DIFFICULTY,
-  LOBBY_SET_MODE,
-  LOBBY_SET_TEAM,
-  LOBBY_START,
   MATCH_END_SECONDS,
   MAX_CHAT_LEN,
   MAX_INPUT_MSGS_PER_SEC,
@@ -44,7 +33,20 @@ import {
   TICK_DT,
 } from '../constants.ts';
 import { decodeMessage, encodeChat, encodeError, encodeMatchEnd, encodePong, encodeRoomState, encodeSnapshot, encodeWelcome } from '../protocol.ts';
-import { defaultLoadout } from '../types.ts';
+import {
+  defaultLoadout,
+  ERR_BAD_NAME,
+  ERR_BAD_VERSION,
+  ERR_KICKED,
+  ERR_ROOM_FULL,
+  LOBBY_BACK_TO_LOBBY,
+  LOBBY_KICK,
+  LOBBY_SET_BOTS,
+  LOBBY_SET_BOT_DIFFICULTY,
+  LOBBY_SET_MODE,
+  LOBBY_SET_TEAM,
+  LOBBY_START,
+} from '../types.ts';
 import type { ChatMsg, InputCmd, LobbyCmd, LobbyPlayer, Loadout, PlayerState, RoomState } from '../types.ts';
 import type { Transport } from './transport.ts';
 import { World } from '../sim/world.ts';
@@ -202,8 +204,8 @@ export class Room {
       return;
     }
     const team = this.rules.assignTeam(this.world);
+    // World.addPlayer calls rules.onPlayerJoin internally; don't call it twice here.
     const player = this.world.addPlayer(id, name, team, false, defaultLoadout());
-    this.rules.onPlayerJoin(this.world, player);
     if (this.hostId === 0) this.hostId = id;
     this.completeJoin(transport, id, player);
   }
@@ -241,10 +243,9 @@ export class Room {
   }
 
   private removePlayerFully(playerId: number): void {
-    const player = this.world.players.get(playerId);
     this.disconnectDeadlines.delete(playerId);
+    // World.removePlayer calls rules.onPlayerLeave internally.
     this.world.removePlayer(playerId);
-    if (player) this.rules.onPlayerLeave(this.world, player);
     if (playerId === this.hostId) this.reassignHost();
     this.checkEmpty();
     this.broadcastRoomState();

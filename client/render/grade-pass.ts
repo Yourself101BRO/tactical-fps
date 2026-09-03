@@ -42,7 +42,7 @@ void main() {
   float grain = (grainNoise(vUv * (time * 60.0 + 1.0)) - 0.5) * 0.03;
   color += grain;
 
-  // Damage: a red vignette from the edges that intensifies with `damage`.
+  // Damage: a red vignette from the edges that intensifies with the damage uniform.
   float damageVig = smoothstep(0.15, 0.75, dist) * clamp(damage, 0.0, 1.0);
   color = mix(color, vec3(0.55, 0.0, 0.0), damageVig * 0.85);
 

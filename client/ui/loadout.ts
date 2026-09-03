@@ -8,6 +8,15 @@ import type { WeaponDef } from '../../shared/weapons.ts';
 import { PERKS } from '../../shared/perks.ts';
 import type { Loadout } from '../../shared/types.ts';
 
+// shared/perks.ts documents PERKS only as `readonly {id;name;description}[]`
+// (no named interface), so this local shape is duck-typed against that
+// rather than importing a type that may not exist.
+interface PerkDef {
+  id: number;
+  name: string;
+  description: string;
+}
+
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] {
   const e = document.createElement(tag);
   if (className) e.className = className;
@@ -90,7 +99,7 @@ export class LoadoutScreen {
       const section = el('div', 'loadout-section');
       section.appendChild(el('div', 'loadout-section-title', slotLabel));
       const cards = el('div', 'weapon-cards');
-      const options = WEAPONS.filter((w) => w.slot === slot);
+      const options = WEAPONS.filter((w: WeaponDef) => w.slot === slot);
       for (const w of options) {
         const card = el('div', 'weapon-card' + (w.id === selected ? ' selected' : ''));
         card.appendChild(el('div', 'weapon-card-name', w.name));
@@ -155,10 +164,10 @@ export class LoadoutScreen {
         }
         if (slotIndex === 0) loadout.perk1 = picked;
         else loadout.perk2 = picked;
-        const desc = PERKS.find((p) => p.id === picked)?.description ?? '';
+        const desc = PERKS.find((p: PerkDef) => p.id === picked)?.description ?? '';
         descEl.textContent = desc;
       });
-      const descEl = el('div', 'perk-desc', PERKS.find((p) => p.id === (slotIndex === 0 ? loadout.perk1 : loadout.perk2))?.description ?? '');
+      const descEl = el('div', 'perk-desc', PERKS.find((p: PerkDef) => p.id === (slotIndex === 0 ? loadout.perk1 : loadout.perk2))?.description ?? '');
       wrap.appendChild(select);
       wrap.appendChild(descEl);
       perkSlots.appendChild(wrap);
