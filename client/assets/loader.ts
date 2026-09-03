@@ -522,13 +522,24 @@ function groupByPrefix(urls: string[], stripPrefix?: string): Record<string, str
   return out;
 }
 
+/** The OpenGameArt footsteps pack is organised as "<surface>/<n>.ogg"; group by the parent folder. */
+function groupByFolder(urls: string[]): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  for (const url of urls) {
+    const parts = url.split('/');
+    const folder = parts.length >= 2 ? parts[parts.length - 2]! : 'misc';
+    (out[folder.toLowerCase()] ??= []).push(url);
+  }
+  return out;
+}
+
 function buildAudioUrls(index: AssetIndex): GameAssetAudioUrls {
   const impactsEntry = index.assets['audio_impacts'];
   const footstepsEntry = index.assets['audio_footsteps'];
   const uiEntry = index.assets['audio_interface'];
 
   const impacts = impactsEntry && !impactsEntry.failed ? groupByPrefix(impactsEntry.files, 'impact') : {};
-  const footsteps = footstepsEntry && !footstepsEntry.failed ? groupByPrefix(footstepsEntry.files) : {};
+  const footsteps = footstepsEntry && !footstepsEntry.failed ? groupByFolder(footstepsEntry.files) : {};
   const ui: Record<string, string> = {};
   if (uiEntry && !uiEntry.failed) {
     for (const url of uiEntry.files) ui[baseName(url)] = url;

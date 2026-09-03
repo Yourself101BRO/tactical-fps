@@ -77,12 +77,15 @@ export function impactGroupsFor(material: number): string[] {
 /** MAT_* -> footstep surface group key (audioUrls.footsteps), or null when no footstep sound
  *  makes sense for that material (flesh — players don't walk on other players). */
 export function footstepSurfaceFor(material: number): string | null {
+  // Folder names of the OpenGameArt "Footsteps on different surfaces" pack:
+  // boots (hard floor), tile, metal, gravel, wood, grass, water, plus non-human sets.
   switch (material) {
     case MAT_CONCRETE:
     case MAT_ASPHALT:
     case MAT_BRICK:
+      return 'boots';
     case MAT_PLASTER:
-      return 'concrete';
+      return 'tile';
     case MAT_METAL:
       return 'metal';
     case MAT_GRAVEL:
@@ -93,7 +96,7 @@ export function footstepSurfaceFor(material: number): string | null {
     case MAT_FLESH:
       return null;
     default:
-      return 'concrete';
+      return 'boots';
   }
 }
 

@@ -63,7 +63,7 @@ test('impact group mapping matches the loader\'s stripped/lower-cased Kenney gro
 test('footstep surface has no sample for flesh but does for the rest', () => {
   assert.equal(footstepSurfaceFor(MAT_FLESH), null);
   assert.equal(footstepSurfaceFor(MAT_METAL), 'metal');
-  assert.equal(footstepSurfaceFor(MAT_CONCRETE), 'concrete');
+  assert.equal(footstepSurfaceFor(MAT_CONCRETE), 'boots');
 });
 
 test('createLcg is deterministic for a given seed and stays in [0, 1)', () => {

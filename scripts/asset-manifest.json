@@ -13,7 +13,10 @@
       "type": "file",
       "url": "https://static.poly.pizza/0b65e14d-a349-44cc-836c-efdeb6933d48.glb",
       "dest": "characters/operator.glb",
-      "tiers": ["desktop", "mobile"],
+      "tiers": [
+        "desktop",
+        "mobile"
+      ],
       "notes": "Mannequin with DEF-* Rigify bones. Clips: Idle_Loop, Walk_Loop, Jog_Fwd_Loop, Sprint_Loop, Crouch_Idle_Loop, Crouch_Fwd_Loop, Jump_Start, Jump_Loop, Jump_Land, Pistol_Idle_Loop, Pistol_Aim_Up, Pistol_Aim_Neutral, Pistol_Aim_Down, Pistol_Shoot, Pistol_Reload, Hit_Chest, Hit_Head, Death01, Roll (all prefixed 'Rig|')."
     },
     {
@@ -27,7 +30,10 @@
       "type": "file",
       "url": "https://static.poly.pizza/66a55d04-4286-44a3-b289-0d774c27db5b.glb",
       "dest": "characters/soldier.glb",
-      "tiers": ["desktop", "mobile"],
+      "tiers": [
+        "desktop",
+        "mobile"
+      ],
       "notes": "Alternative character. Clips prefixed 'CharacterArmature|': Idle, Idle_Gun, Idle_Gun_Pointing, Idle_Gun_Shoot, Walk, Run, Run_Back, Run_Left, Run_Right, Run_Shoot, Gun_Shoot, HitRecieve, HitRecieve_2, Death, Roll."
     },
     {
@@ -41,8 +47,22 @@
       "type": "zip",
       "url": "https://opengameart.org/sites/default/files/soviet_assault_rifle_3d.zip",
       "dest": "weapons/ar",
-      "tiers": ["desktop", "mobile"],
-      "prefer": ["glb", "gltf", "fbx", "obj"]
+      "tiers": [
+        "desktop",
+        "mobile"
+      ],
+      "prefer": [
+        "glb",
+        "gltf",
+        "fbx",
+        "obj"
+      ],
+      "exclude": [
+        "*.blend",
+        "*.blend1",
+        "*.txt",
+        "*.url"
+      ]
     },
     {
       "id": "weapon_ar_hero",
@@ -55,7 +75,9 @@
       "type": "file",
       "url": "https://opengameart.org/sites/default/files/highpoly_ak47.obj",
       "dest": "weapons/ar_hero/highpoly_ak47.obj",
-      "tiers": ["desktop"],
+      "tiers": [
+        "desktop"
+      ],
       "optional": true,
       "notes": "Desktop-only first-person model; used only if it loads within the triangle budget."
     },
@@ -70,8 +92,22 @@
       "type": "zip",
       "url": "https://opengameart.org/sites/default/files/smg-10_3d.zip",
       "dest": "weapons/smg",
-      "tiers": ["desktop", "mobile"],
-      "prefer": ["glb", "gltf", "fbx", "obj"]
+      "tiers": [
+        "desktop",
+        "mobile"
+      ],
+      "prefer": [
+        "glb",
+        "gltf",
+        "fbx",
+        "obj"
+      ],
+      "exclude": [
+        "*.blend",
+        "*.blend1",
+        "*.txt",
+        "*.url"
+      ]
     },
     {
       "id": "weapon_sniper",
@@ -84,8 +120,22 @@
       "type": "zip",
       "url": "https://opengameart.org/sites/default/files/soviet_special_sniper_rifle_3d.zip",
       "dest": "weapons/sniper",
-      "tiers": ["desktop", "mobile"],
-      "prefer": ["glb", "gltf", "fbx", "obj"]
+      "tiers": [
+        "desktop",
+        "mobile"
+      ],
+      "prefer": [
+        "glb",
+        "gltf",
+        "fbx",
+        "obj"
+      ],
+      "exclude": [
+        "*.blend",
+        "*.blend1",
+        "*.txt",
+        "*.url"
+      ]
     },
     {
       "id": "weapon_shotgun",
@@ -98,9 +148,25 @@
       "type": "zip",
       "url": "https://opengameart.org/sites/default/files/myShotgun.zip",
       "dest": "weapons/shotgun",
-      "tiers": ["desktop", "mobile"],
-      "prefer": ["glb", "gltf", "dae", "obj"],
-      "exclude": ["*.wav", "*.ogg", "*.mp3"],
+      "tiers": [
+        "desktop",
+        "mobile"
+      ],
+      "prefer": [
+        "glb",
+        "gltf",
+        "dae",
+        "obj"
+      ],
+      "exclude": [
+        "*.blend",
+        "*.blend1",
+        "*.mp3",
+        "*.ogg",
+        "*.txt",
+        "*.url",
+        "*.wav"
+      ],
       "notes": "Dual-licensed CC0 / CC-BY-SA 3.0; we use the CC0 grant for the model. The bundled sound files are CC-BY and are deleted, not used."
     },
     {
@@ -114,9 +180,22 @@
       "type": "zip",
       "url": "https://opengameart.org/sites/default/files/pistolfbxgltftexturesblend_1.zip",
       "dest": "weapons/pistol",
-      "tiers": ["desktop", "mobile"],
-      "prefer": ["glb", "gltf", "fbx", "obj"],
-      "exclude": ["*.blend", "*.blend1"]
+      "tiers": [
+        "desktop",
+        "mobile"
+      ],
+      "prefer": [
+        "glb",
+        "gltf",
+        "fbx",
+        "obj"
+      ],
+      "exclude": [
+        "*.blend",
+        "*.blend1",
+        "*.txt",
+        "*.url"
+      ]
     },
     {
       "id": "grenades",
@@ -129,27 +208,398 @@
       "type": "file",
       "url": "https://opengameart.org/sites/default/files/Grenades.obj",
       "dest": "grenades/grenades.obj",
-      "tiers": ["desktop", "mobile"]
+      "tiers": [
+        "desktop",
+        "mobile"
+      ]
     },
-    { "id": "prop_barrel_01", "category": "prop", "name": "Barrel 01", "author": "Poly Haven", "license": "CC0-1.0", "licenseUrl": "https://polyhaven.com/license", "sourceUrl": "https://polyhaven.com/a/Barrel_01", "type": "polyhaven-model", "polyhavenId": "Barrel_01", "resolution": "1k", "dest": "props/Barrel_01", "tiers": ["desktop", "mobile"] },
-    { "id": "prop_barrel_02", "category": "prop", "name": "Barrel 02", "author": "Poly Haven", "license": "CC0-1.0", "licenseUrl": "https://polyhaven.com/license", "sourceUrl": "https://polyhaven.com/a/Barrel_02", "type": "polyhaven-model", "polyhavenId": "Barrel_02", "resolution": "1k", "dest": "props/Barrel_02", "tiers": ["desktop", "mobile"] },
-    { "id": "prop_ammo_box", "category": "prop", "name": "Ammo Box", "author": "Poly Haven", "license": "CC0-1.0", "licenseUrl": "https://polyhaven.com/license", "sourceUrl": "https://polyhaven.com/a/ammo_box", "type": "polyhaven-model", "polyhavenId": "ammo_box", "resolution": "1k", "dest": "props/ammo_box", "tiers": ["desktop", "mobile"] },
-    { "id": "prop_cardboard_box", "category": "prop", "name": "Cardboard Box 01", "author": "Poly Haven", "license": "CC0-1.0", "licenseUrl": "https://polyhaven.com/license", "sourceUrl": "https://polyhaven.com/a/cardboard_box_01", "type": "polyhaven-model", "polyhavenId": "cardboard_box_01", "resolution": "1k", "dest": "props/cardboard_box_01", "tiers": ["desktop", "mobile"] },
-    { "id": "prop_cement_bag", "category": "prop", "name": "Cement Bag", "author": "Poly Haven", "license": "CC0-1.0", "licenseUrl": "https://polyhaven.com/license", "sourceUrl": "https://polyhaven.com/a/cement_bag", "type": "polyhaven-model", "polyhavenId": "cement_bag", "resolution": "1k", "dest": "props/cement_bag", "tiers": ["desktop", "mobile"] },
-    { "id": "prop_caged_light", "category": "prop", "name": "Caged Hanging Light", "author": "Poly Haven", "license": "CC0-1.0", "licenseUrl": "https://polyhaven.com/license", "sourceUrl": "https://polyhaven.com/a/caged_hanging_light", "type": "polyhaven-model", "polyhavenId": "caged_hanging_light", "resolution": "1k", "dest": "props/caged_hanging_light", "tiers": ["desktop"] },
-    { "id": "tex_concrete_floor", "category": "texture", "name": "Concrete Floor 01", "author": "Poly Haven", "license": "CC0-1.0", "licenseUrl": "https://polyhaven.com/license", "sourceUrl": "https://polyhaven.com/a/concrete_floor_01", "type": "polyhaven-texture", "polyhavenId": "concrete_floor_01", "resolution": "1k", "maps": ["diff", "nor_gl", "rough"], "dest": "textures/concrete_floor_01", "tiers": ["desktop", "mobile"] },
-    { "id": "tex_concrete_wall", "category": "texture", "name": "Concrete Wall 007", "author": "Poly Haven", "license": "CC0-1.0", "licenseUrl": "https://polyhaven.com/license", "sourceUrl": "https://polyhaven.com/a/concrete_wall_007", "type": "polyhaven-texture", "polyhavenId": "concrete_wall_007", "resolution": "1k", "maps": ["diff", "nor_gl", "rough"], "dest": "textures/concrete_wall_007", "tiers": ["desktop", "mobile"] },
-    { "id": "tex_concrete_block", "category": "texture", "name": "Concrete Block Wall", "author": "Poly Haven", "license": "CC0-1.0", "licenseUrl": "https://polyhaven.com/license", "sourceUrl": "https://polyhaven.com/a/concrete_block_wall", "type": "polyhaven-texture", "polyhavenId": "concrete_block_wall", "resolution": "1k", "maps": ["diff", "nor_gl", "rough"], "dest": "textures/concrete_block_wall", "tiers": ["desktop", "mobile"] },
-    { "id": "tex_asphalt", "category": "texture", "name": "Asphalt 02", "author": "Poly Haven", "license": "CC0-1.0", "licenseUrl": "https://polyhaven.com/license", "sourceUrl": "https://polyhaven.com/a/asphalt_02", "type": "polyhaven-texture", "polyhavenId": "asphalt_02", "resolution": "1k", "maps": ["diff", "nor_gl", "rough"], "dest": "textures/asphalt_02", "tiers": ["desktop", "mobile"] },
-    { "id": "tex_corrugated_iron", "category": "texture", "name": "Corrugated Iron 02", "author": "Poly Haven", "license": "CC0-1.0", "licenseUrl": "https://polyhaven.com/license", "sourceUrl": "https://polyhaven.com/a/corrugated_iron_02", "type": "polyhaven-texture", "polyhavenId": "corrugated_iron_02", "resolution": "1k", "maps": ["diff", "nor_gl", "rough"], "dest": "textures/corrugated_iron_02", "tiers": ["desktop", "mobile"] },
-    { "id": "tex_rusty_metal", "category": "texture", "name": "Rusty Metal 02", "author": "Poly Haven", "license": "CC0-1.0", "licenseUrl": "https://polyhaven.com/license", "sourceUrl": "https://polyhaven.com/a/rusty_metal_02", "type": "polyhaven-texture", "polyhavenId": "rusty_metal_02", "resolution": "1k", "maps": ["diff", "nor_gl", "rough"], "dest": "textures/rusty_metal_02", "tiers": ["desktop", "mobile"] },
-    { "id": "tex_metal_plate", "category": "texture", "name": "Metal Plate", "author": "Poly Haven", "license": "CC0-1.0", "licenseUrl": "https://polyhaven.com/license", "sourceUrl": "https://polyhaven.com/a/metal_plate", "type": "polyhaven-texture", "polyhavenId": "metal_plate", "resolution": "1k", "maps": ["diff", "nor_gl", "rough"], "dest": "textures/metal_plate", "tiers": ["desktop", "mobile"] },
-    { "id": "tex_metal_shutter", "category": "texture", "name": "Painted Metal Shutter", "author": "Poly Haven", "license": "CC0-1.0", "licenseUrl": "https://polyhaven.com/license", "sourceUrl": "https://polyhaven.com/a/painted_metal_shutter", "type": "polyhaven-texture", "polyhavenId": "painted_metal_shutter", "resolution": "1k", "maps": ["diff", "nor_gl", "rough"], "dest": "textures/painted_metal_shutter", "tiers": ["desktop", "mobile"] },
-    { "id": "tex_brick", "category": "texture", "name": "Brick Wall 02", "author": "Poly Haven", "license": "CC0-1.0", "licenseUrl": "https://polyhaven.com/license", "sourceUrl": "https://polyhaven.com/a/brick_wall_02", "type": "polyhaven-texture", "polyhavenId": "brick_wall_02", "resolution": "1k", "maps": ["diff", "nor_gl", "rough"], "dest": "textures/brick_wall_02", "tiers": ["desktop", "mobile"] },
-    { "id": "tex_plaster", "category": "texture", "name": "Plastered Wall 02", "author": "Poly Haven", "license": "CC0-1.0", "licenseUrl": "https://polyhaven.com/license", "sourceUrl": "https://polyhaven.com/a/plastered_wall_02", "type": "polyhaven-texture", "polyhavenId": "plastered_wall_02", "resolution": "1k", "maps": ["diff", "nor_gl", "rough"], "dest": "textures/plastered_wall_02", "tiers": ["desktop", "mobile"] },
-    { "id": "tex_gravel", "category": "texture", "name": "Sandy Gravel 02", "author": "Poly Haven", "license": "CC0-1.0", "licenseUrl": "https://polyhaven.com/license", "sourceUrl": "https://polyhaven.com/a/sandy_gravel_02", "type": "polyhaven-texture", "polyhavenId": "sandy_gravel_02", "resolution": "1k", "maps": ["diff", "nor_gl", "rough"], "dest": "textures/sandy_gravel_02", "tiers": ["desktop", "mobile"] },
-    { "id": "tex_planks", "category": "texture", "name": "Worn Planks", "author": "Poly Haven", "license": "CC0-1.0", "licenseUrl": "https://polyhaven.com/license", "sourceUrl": "https://polyhaven.com/a/worn_planks", "type": "polyhaven-texture", "polyhavenId": "worn_planks", "resolution": "1k", "maps": ["diff", "nor_gl", "rough"], "dest": "textures/worn_planks", "tiers": ["desktop", "mobile"] },
-    { "id": "tex_rubber_tiles", "category": "texture", "name": "Rubber Tiles", "author": "Poly Haven", "license": "CC0-1.0", "licenseUrl": "https://polyhaven.com/license", "sourceUrl": "https://polyhaven.com/a/rubber_tiles", "type": "polyhaven-texture", "polyhavenId": "rubber_tiles", "resolution": "1k", "maps": ["diff", "nor_gl", "rough"], "dest": "textures/rubber_tiles", "tiers": ["desktop", "mobile"] },
+    {
+      "id": "prop_barrel_01",
+      "category": "prop",
+      "name": "Barrel 01",
+      "author": "Poly Haven",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "sourceUrl": "https://polyhaven.com/a/Barrel_01",
+      "type": "polyhaven-model",
+      "polyhavenId": "Barrel_01",
+      "resolution": "1k",
+      "dest": "props/Barrel_01",
+      "tiers": [
+        "desktop",
+        "mobile"
+      ]
+    },
+    {
+      "id": "prop_barrel_02",
+      "category": "prop",
+      "name": "Barrel 02",
+      "author": "Poly Haven",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "sourceUrl": "https://polyhaven.com/a/Barrel_02",
+      "type": "polyhaven-model",
+      "polyhavenId": "Barrel_02",
+      "resolution": "1k",
+      "dest": "props/Barrel_02",
+      "tiers": [
+        "desktop",
+        "mobile"
+      ]
+    },
+    {
+      "id": "prop_ammo_box",
+      "category": "prop",
+      "name": "Ammo Box",
+      "author": "Poly Haven",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "sourceUrl": "https://polyhaven.com/a/ammo_box",
+      "type": "polyhaven-model",
+      "polyhavenId": "ammo_box",
+      "resolution": "1k",
+      "dest": "props/ammo_box",
+      "tiers": [
+        "desktop",
+        "mobile"
+      ]
+    },
+    {
+      "id": "prop_cardboard_box",
+      "category": "prop",
+      "name": "Cardboard Box 01",
+      "author": "Poly Haven",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "sourceUrl": "https://polyhaven.com/a/cardboard_box_01",
+      "type": "polyhaven-model",
+      "polyhavenId": "cardboard_box_01",
+      "resolution": "1k",
+      "dest": "props/cardboard_box_01",
+      "tiers": [
+        "desktop",
+        "mobile"
+      ]
+    },
+    {
+      "id": "prop_cement_bag",
+      "category": "prop",
+      "name": "Cement Bag",
+      "author": "Poly Haven",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "sourceUrl": "https://polyhaven.com/a/cement_bag",
+      "type": "polyhaven-model",
+      "polyhavenId": "cement_bag",
+      "resolution": "1k",
+      "dest": "props/cement_bag",
+      "tiers": [
+        "desktop",
+        "mobile"
+      ]
+    },
+    {
+      "id": "prop_caged_light",
+      "category": "prop",
+      "name": "Caged Hanging Light",
+      "author": "Poly Haven",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "sourceUrl": "https://polyhaven.com/a/caged_hanging_light",
+      "type": "polyhaven-model",
+      "polyhavenId": "caged_hanging_light",
+      "resolution": "1k",
+      "dest": "props/caged_hanging_light",
+      "tiers": [
+        "desktop"
+      ]
+    },
+    {
+      "id": "tex_concrete_floor",
+      "category": "texture",
+      "name": "Concrete Floor 01",
+      "author": "Poly Haven",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "sourceUrl": "https://polyhaven.com/a/concrete_floor_01",
+      "type": "polyhaven-texture",
+      "polyhavenId": "concrete_floor_01",
+      "resolution": "1k",
+      "maps": [
+        "diff",
+        "nor_gl",
+        "rough"
+      ],
+      "dest": "textures/concrete_floor_01",
+      "tiers": [
+        "desktop",
+        "mobile"
+      ]
+    },
+    {
+      "id": "tex_concrete_wall",
+      "category": "texture",
+      "name": "Concrete Wall 007",
+      "author": "Poly Haven",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "sourceUrl": "https://polyhaven.com/a/concrete_wall_007",
+      "type": "polyhaven-texture",
+      "polyhavenId": "concrete_wall_007",
+      "resolution": "1k",
+      "maps": [
+        "diff",
+        "nor_gl",
+        "rough"
+      ],
+      "dest": "textures/concrete_wall_007",
+      "tiers": [
+        "desktop",
+        "mobile"
+      ]
+    },
+    {
+      "id": "tex_concrete_block",
+      "category": "texture",
+      "name": "Concrete Block Wall",
+      "author": "Poly Haven",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "sourceUrl": "https://polyhaven.com/a/concrete_block_wall",
+      "type": "polyhaven-texture",
+      "polyhavenId": "concrete_block_wall",
+      "resolution": "1k",
+      "maps": [
+        "diff",
+        "nor_gl",
+        "rough"
+      ],
+      "dest": "textures/concrete_block_wall",
+      "tiers": [
+        "desktop",
+        "mobile"
+      ]
+    },
+    {
+      "id": "tex_asphalt",
+      "category": "texture",
+      "name": "Asphalt 02",
+      "author": "Poly Haven",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "sourceUrl": "https://polyhaven.com/a/asphalt_02",
+      "type": "polyhaven-texture",
+      "polyhavenId": "asphalt_02",
+      "resolution": "1k",
+      "maps": [
+        "diff",
+        "nor_gl",
+        "rough"
+      ],
+      "dest": "textures/asphalt_02",
+      "tiers": [
+        "desktop",
+        "mobile"
+      ]
+    },
+    {
+      "id": "tex_corrugated_iron",
+      "category": "texture",
+      "name": "Corrugated Iron 02",
+      "author": "Poly Haven",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "sourceUrl": "https://polyhaven.com/a/corrugated_iron_02",
+      "type": "polyhaven-texture",
+      "polyhavenId": "corrugated_iron_02",
+      "resolution": "1k",
+      "maps": [
+        "diff",
+        "nor_gl",
+        "rough"
+      ],
+      "dest": "textures/corrugated_iron_02",
+      "tiers": [
+        "desktop",
+        "mobile"
+      ]
+    },
+    {
+      "id": "tex_rusty_metal",
+      "category": "texture",
+      "name": "Rusty Metal 02",
+      "author": "Poly Haven",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "sourceUrl": "https://polyhaven.com/a/rusty_metal_02",
+      "type": "polyhaven-texture",
+      "polyhavenId": "rusty_metal_02",
+      "resolution": "1k",
+      "maps": [
+        "diff",
+        "nor_gl",
+        "rough"
+      ],
+      "dest": "textures/rusty_metal_02",
+      "tiers": [
+        "desktop",
+        "mobile"
+      ]
+    },
+    {
+      "id": "tex_metal_plate",
+      "category": "texture",
+      "name": "Metal Plate",
+      "author": "Poly Haven",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "sourceUrl": "https://polyhaven.com/a/metal_plate",
+      "type": "polyhaven-texture",
+      "polyhavenId": "metal_plate",
+      "resolution": "1k",
+      "maps": [
+        "diff",
+        "nor_gl",
+        "rough"
+      ],
+      "dest": "textures/metal_plate",
+      "tiers": [
+        "desktop",
+        "mobile"
+      ]
+    },
+    {
+      "id": "tex_metal_shutter",
+      "category": "texture",
+      "name": "Painted Metal Shutter",
+      "author": "Poly Haven",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "sourceUrl": "https://polyhaven.com/a/painted_metal_shutter",
+      "type": "polyhaven-texture",
+      "polyhavenId": "painted_metal_shutter",
+      "resolution": "1k",
+      "maps": [
+        "diff",
+        "nor_gl",
+        "rough"
+      ],
+      "dest": "textures/painted_metal_shutter",
+      "tiers": [
+        "desktop",
+        "mobile"
+      ]
+    },
+    {
+      "id": "tex_brick",
+      "category": "texture",
+      "name": "Brick Wall 02",
+      "author": "Poly Haven",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "sourceUrl": "https://polyhaven.com/a/brick_wall_02",
+      "type": "polyhaven-texture",
+      "polyhavenId": "brick_wall_02",
+      "resolution": "1k",
+      "maps": [
+        "diff",
+        "nor_gl",
+        "rough"
+      ],
+      "dest": "textures/brick_wall_02",
+      "tiers": [
+        "desktop",
+        "mobile"
+      ]
+    },
+    {
+      "id": "tex_plaster",
+      "category": "texture",
+      "name": "Plastered Wall 02",
+      "author": "Poly Haven",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "sourceUrl": "https://polyhaven.com/a/plastered_wall_02",
+      "type": "polyhaven-texture",
+      "polyhavenId": "plastered_wall_02",
+      "resolution": "1k",
+      "maps": [
+        "diff",
+        "nor_gl",
+        "rough"
+      ],
+      "dest": "textures/plastered_wall_02",
+      "tiers": [
+        "desktop",
+        "mobile"
+      ]
+    },
+    {
+      "id": "tex_gravel",
+      "category": "texture",
+      "name": "Sandy Gravel 02",
+      "author": "Poly Haven",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "sourceUrl": "https://polyhaven.com/a/sandy_gravel_02",
+      "type": "polyhaven-texture",
+      "polyhavenId": "sandy_gravel_02",
+      "resolution": "1k",
+      "maps": [
+        "diff",
+        "nor_gl",
+        "rough"
+      ],
+      "dest": "textures/sandy_gravel_02",
+      "tiers": [
+        "desktop",
+        "mobile"
+      ]
+    },
+    {
+      "id": "tex_planks",
+      "category": "texture",
+      "name": "Worn Planks",
+      "author": "Poly Haven",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "sourceUrl": "https://polyhaven.com/a/worn_planks",
+      "type": "polyhaven-texture",
+      "polyhavenId": "worn_planks",
+      "resolution": "1k",
+      "maps": [
+        "diff",
+        "nor_gl",
+        "rough"
+      ],
+      "dest": "textures/worn_planks",
+      "tiers": [
+        "desktop",
+        "mobile"
+      ]
+    },
+    {
+      "id": "tex_rubber_tiles",
+      "category": "texture",
+      "name": "Rubber Tiles",
+      "author": "Poly Haven",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "sourceUrl": "https://polyhaven.com/a/rubber_tiles",
+      "type": "polyhaven-texture",
+      "polyhavenId": "rubber_tiles",
+      "resolution": "1k",
+      "maps": [
+        "diff",
+        "nor_gl",
+        "rough"
+      ],
+      "dest": "textures/rubber_tiles",
+      "tiers": [
+        "desktop",
+        "mobile"
+      ]
+    },
     {
       "id": "hdri_parking",
       "category": "hdri",
@@ -161,7 +611,10 @@
       "type": "file",
       "url": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/abandoned_parking_1k.hdr",
       "dest": "hdri/abandoned_parking_1k.hdr",
-      "tiers": ["desktop", "mobile"]
+      "tiers": [
+        "desktop",
+        "mobile"
+      ]
     },
     {
       "id": "audio_impacts",
@@ -174,8 +627,13 @@
       "type": "zip",
       "url": "https://kenney.nl/media/pages/assets/impact-sounds/87b4ddecda-1677589768/kenney_impact-sounds.zip",
       "dest": "audio/impacts",
-      "tiers": ["desktop", "mobile"],
-      "include": ["*.ogg"]
+      "tiers": [
+        "desktop",
+        "mobile"
+      ],
+      "include": [
+        "*.ogg"
+      ]
     },
     {
       "id": "audio_interface",
@@ -188,8 +646,13 @@
       "type": "zip",
       "url": "https://kenney.nl/media/pages/assets/interface-sounds/fa43c1dd4d-1677589452/kenney_interface-sounds.zip",
       "dest": "audio/interface",
-      "tiers": ["desktop", "mobile"],
-      "include": ["*.ogg"]
+      "tiers": [
+        "desktop",
+        "mobile"
+      ],
+      "include": [
+        "*.ogg"
+      ]
     },
     {
       "id": "audio_footsteps",
@@ -202,7 +665,10 @@
       "type": "zip",
       "url": "https://opengameart.org/sites/default/files/footsteps_0.zip",
       "dest": "audio/footsteps",
-      "tiers": ["desktop", "mobile"],
+      "tiers": [
+        "desktop",
+        "mobile"
+      ],
       "attributionRequired": true
     }
   ]
