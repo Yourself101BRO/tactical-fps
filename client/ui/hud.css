@@ -1147,3 +1147,19 @@
   }
 }
 
+
+/* Touch layouts: the right-hand button cluster (fire / ADS / jump / crouch /
+   reload / swap) occupies roughly the right 230 px and the bottom 260 px of a
+   phone screen, so the ammo readout moves left of it and the health bar sits
+   just above the floating-joystick thumb zone. */
+@media (pointer: coarse) {
+  .hud-ammo {
+    right: calc(240px + env(safe-area-inset-right, 0px));
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+  .hud-health {
+    left: calc(16px + env(safe-area-inset-left, 0px));
+    bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+    width: 180px;
+  }
+}
