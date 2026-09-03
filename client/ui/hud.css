@@ -95,6 +95,11 @@
   pointer-events: none;
   filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.9));
 }
+.hitmarker svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
 .hitmarker.active {
   animation: hitmarker-pop 0.2s ease-out;
 }
